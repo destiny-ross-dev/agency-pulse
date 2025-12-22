@@ -18,6 +18,7 @@ import {
 } from "./lib/dates";
 import { computeDataHealth } from "./lib/dataHealth";
 import { computeAgentMetrics } from "./lib/agentMetrics";
+import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
 
 function UploadIcon() {
   return (
@@ -147,6 +148,21 @@ function money(n) {
   });
 }
 
+function money2(n) {
+  const x = Number(n || 0);
+  return x.toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function ratio(n) {
+  const x = Number(n || 0);
+  return `${x.toFixed(2)}x`;
+}
+
 function pct(n) {
   const x = Number(n || 0);
   return `${(x * 100).toFixed(1)}%`;
@@ -181,6 +197,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [healthOpen, setHealthOpen] = useState(true);
   const [agentView, setAgentView] = useState("totals"); // "totals" | "efficiency"
+
+  const [roiSort, setRoiSort] = useState("premiumPerSpend"); // premiumPerSpend | issuedPremium | cpa
+  const [roiScope, setRoiScope] = useState("paid"); // "paid" | "all"
 
   const [datasets, setDatasets] = useState({
     activity: null,
@@ -415,6 +434,43 @@ export default function App() {
     if (rangeMode === "custom") return "Custom";
     return "All Time";
   }, [rangeMode, activeRange]);
+
+  const roiRows = useMemo(() => {
+    if (step !== 3) return [];
+    if (!canAnalyze || !normalizedAll) return [];
+
+    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
+    const paidLeadRows = filterByRange(normalizedAll.paidLeadsAll, "date");
+
+    let rows = computeLeadSourceROI({ quoteSalesRows, paidLeadRows });
+
+    // Scope filter:
+    // - "paid": only sources with paid lead activity (leads > 0 OR spend > 0)
+    // - "all": keep everything
+    if (roiScope === "paid") {
+      rows = rows.filter((r) => (r.leads || 0) > 0 || (r.spend || 0) > 0);
+    }
+
+    if (roiSort === "issuedPremium") {
+      return [...rows].sort((a, b) => b.issuedPremium - a.issuedPremium);
+    }
+
+    if (roiSort === "cpa") {
+      // lower CPA is better; push zeros (no issued) to bottom
+      return [...rows].sort((a, b) => {
+        const aa = a.cpa === 0 ? Number.POSITIVE_INFINITY : a.cpa;
+        const bb = b.cpa === 0 ? Number.POSITIVE_INFINITY : b.cpa;
+        return aa - bb;
+      });
+    }
+
+    // default: premiumPerSpend (higher is better); push zeros to bottom
+    return [...rows].sort((a, b) => {
+      const aa = a.premiumPerSpend === 0 ? -1 : a.premiumPerSpend;
+      const bb = b.premiumPerSpend === 0 ? -1 : b.premiumPerSpend;
+      return bb - aa;
+    });
+  }, [step, canAnalyze, normalizedAll, activeRange, roiSort, roiScope]);
 
   return (
     <div>
@@ -1027,6 +1083,138 @@ export default function App() {
                             }}
                           >
                             No agent data in the selected date range.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Lead Source ROI */}
+              <div className="table-card" style={{ marginTop: 16 }}>
+                <div className="table-toolbar">
+                  <div className="toolbar-left">
+                    <div>
+                      <div className="toolbar-title">Lead Source ROI</div>
+                      <div className="small">
+                        Spend, volume, and outcomes by lead source
+                        (date-filtered).
+                      </div>
+                    </div>
+
+                    <div className="seg" style={{ marginLeft: 6 }}>
+                      <button
+                        type="button"
+                        className={
+                          roiSort === "premiumPerSpend" ? "active" : ""
+                        }
+                        onClick={() => setRoiSort("premiumPerSpend")}
+                      >
+                        Best ROI
+                      </button>
+                      <button
+                        type="button"
+                        className={roiSort === "issuedPremium" ? "active" : ""}
+                        onClick={() => setRoiSort("issuedPremium")}
+                      >
+                        Most Premium
+                      </button>
+                      <button
+                        type="button"
+                        className={roiSort === "cpa" ? "active" : ""}
+                        onClick={() => setRoiSort("cpa")}
+                      >
+                        Lowest CPA
+                      </button>
+                    </div>
+
+                    <div className="seg" style={{ marginLeft: 6 }}>
+                      <button
+                        type="button"
+                        className={roiScope === "paid" ? "active" : ""}
+                        onClick={() => setRoiScope("paid")}
+                      >
+                        Paid Only
+                      </button>
+                      <button
+                        type="button"
+                        className={roiScope === "all" ? "active" : ""}
+                        onClick={() => setRoiScope("all")}
+                      >
+                        All Sources
+                      </button>
+                    </div>
+
+                    <div className="roi-badges">
+                      {health?.cross ? (
+                        <span
+                          className={`kpi-tag ${
+                            health.cross.paidSourcesWithNoQuoteSales > 0
+                              ? "warn"
+                              : "good"
+                          }`}
+                        >
+                          <span className="muted">Unmatched paid sources:</span>{" "}
+                          {health.cross.paidSourcesWithNoQuoteSales.toLocaleString()}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="small">
+                    Range: <b style={{ color: "#334155" }}>{rangeLabel}</b>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Lead Source</th>
+                        <th className="right">Leads</th>
+                        <th className="right">Spend</th>
+                        <th className="right">$/Lead</th>
+                        <th className="right">Quoted</th>
+                        <th className="right">Issued</th>
+                        <th className="right">Conversion</th>
+                        <th className="right">CPA</th>
+                        <th className="right">Issued Premium</th>
+                        <th className="right">Premium / $</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {roiRows.map((r) => (
+                        <tr key={r.leadSource}>
+                          <td style={{ fontWeight: 900 }}>{r.leadSource}</td>
+                          <td className="right">{r.leads.toLocaleString()}</td>
+                          <td className="right">{money2(r.spend)}</td>
+                          <td className="right">{money2(r.spendPerLead)}</td>
+                          <td className="right">{r.quoted.toLocaleString()}</td>
+                          <td className="right">{r.issued.toLocaleString()}</td>
+                          <td className="right">{pct(r.conversion)}</td>
+                          <td className="right">
+                            {r.cpa ? money2(r.cpa) : "—"}
+                          </td>
+                          <td className="right">{money(r.issuedPremium)}</td>
+                          <td className="right">
+                            {r.premiumPerSpend ? ratio(r.premiumPerSpend) : "—"}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {roiRows.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={10}
+                            style={{
+                              padding: 14,
+                              color: "var(--muted)",
+                              fontWeight: 700,
+                            }}
+                          >
+                            No lead source data in the selected date range.
                           </td>
                         </tr>
                       ) : null}

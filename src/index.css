@@ -892,3 +892,42 @@ tbody tr:hover {
   color: #334155;
   box-shadow: var(--shadow);
 }
+
+/* ROI table */
+.roi-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.kpi-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: white;
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  font-weight: 900;
+  color: #334155;
+}
+
+.kpi-tag .muted {
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.kpi-tag.good {
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+  color: var(--ok-text);
+}
+
+.kpi-tag.warn {
+  background: var(--bad-bg);
+  border-color: var(--bad-border);
+  color: var(--bad-text);
+}
