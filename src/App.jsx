@@ -19,6 +19,7 @@ import {
 import { computeDataHealth } from "./lib/dataHealth";
 import { computeAgentMetrics } from "./lib/agentMetrics";
 import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
+import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
 
 function UploadIcon() {
   return (
@@ -200,6 +201,9 @@ export default function App() {
 
   const [roiSort, setRoiSort] = useState("premiumPerSpend"); // premiumPerSpend | issuedPremium | cpa
   const [roiScope, setRoiScope] = useState("paid"); // "paid" | "all"
+
+  const [funnelMode, setFunnelMode] = useState("agency"); // "agency" | "agent"
+  const [selectedAgent, setSelectedAgent] = useState("");
 
   const [datasets, setDatasets] = useState({
     activity: null,
@@ -406,12 +410,19 @@ export default function App() {
 
   const health = useMemo(() => {
     if (!canAnalyze || !normalizedAll) return null;
+
+    // Important: health is computed on the currently selected date range
+    // so cross-file totals comparisons are meaningful.
+    const activityRows = filterByRange(normalizedAll.activityAll, "date");
+    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
+    const paidLeadRows = filterByRange(normalizedAll.paidLeadsAll, "date");
+
     return computeDataHealth({
-      activityRows: normalizedAll.activityAll,
-      quoteSalesRows: normalizedAll.quoteSalesAll,
-      paidLeadRows: normalizedAll.paidLeadsAll,
+      activityRows,
+      quoteSalesRows,
+      paidLeadRows,
     });
-  }, [canAnalyze, normalizedAll]);
+  }, [canAnalyze, normalizedAll, activeRange]);
 
   const agentRows = useMemo(() => {
     if (step !== 3) return [];
@@ -471,6 +482,30 @@ export default function App() {
       return bb - aa;
     });
   }, [step, canAnalyze, normalizedAll, activeRange, roiSort, roiScope]);
+
+  const funnelData = useMemo(() => {
+    if (step !== 3) return null;
+    if (!canAnalyze || !normalizedAll) return null;
+
+    const activityRows = filterByRange(normalizedAll.activityAll, "date");
+    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
+
+    const agency = computeFunnel({ activityRows, quoteSalesRows });
+    const byAgent = computeFunnelByAgent({ activityRows, quoteSalesRows });
+
+    const agents = Array.from(byAgent.keys()).sort((a, b) =>
+      a.localeCompare(b)
+    );
+
+    // Keep selection stable; pick first agent if none selected
+    const agentName =
+      selectedAgent && byAgent.has(selectedAgent)
+        ? selectedAgent
+        : agents[0] || "";
+    const agentFunnel = agentName ? byAgent.get(agentName) : null;
+
+    return { agency, byAgent, agents, agentName, agentFunnel };
+  }, [step, canAnalyze, normalizedAll, activeRange, selectedAgent]);
 
   return (
     <div>
@@ -830,6 +865,26 @@ export default function App() {
                               count={health.activity.missingAgent}
                             />
                             <HealthItem
+                              label="Cross-file totals mismatch (Quotes + Issued)"
+                              note={`Activity Total Quotes: ${Math.round(
+                                health.cross.activityQuotesTotal
+                              ).toLocaleString()} • Log (Quoted+Issued): ${health.cross.logQuotedOrIssued.toLocaleString()} • Δ ${Math.round(
+                                health.cross.quotesDelta
+                              ).toLocaleString()}`}
+                              count={Math.abs(health.cross.quotesDelta)}
+                            />
+
+                            <HealthItem
+                              label="Cross-file totals mismatch (Issued)"
+                              note={`Activity Total Sales: ${Math.round(
+                                health.cross.activitySalesTotal
+                              ).toLocaleString()} • Log Issued: ${health.cross.logIssued.toLocaleString()} • Δ ${Math.round(
+                                health.cross.salesDelta
+                              ).toLocaleString()}`}
+                              count={Math.abs(health.cross.salesDelta)}
+                            />
+
+                            <HealthItem
                               label="Non-numeric activity counts"
                               note="Examples: 'ten', 'N/A', or formatted text."
                               count={health.activity.nonNumericCounts}
@@ -1090,6 +1145,151 @@ export default function App() {
                   </table>
                 </div>
               </div>
+
+              {/* Funnel Diagnostics */}
+              {funnelData ? (
+                <div className="table-card" style={{ marginTop: 16 }}>
+                  <div className="table-toolbar">
+                    <div className="toolbar-left">
+                      <div>
+                        <div className="toolbar-title">Funnel Diagnostics</div>
+                        <div className="small">
+                          Where performance drops: Dials → Contacts → Quotes →
+                          Issued.
+                        </div>
+                      </div>
+
+                      <div className="seg" style={{ marginLeft: 6 }}>
+                        <button
+                          type="button"
+                          className={funnelMode === "agency" ? "active" : ""}
+                          onClick={() => setFunnelMode("agency")}
+                        >
+                          Agency
+                        </button>
+                        <button
+                          type="button"
+                          className={funnelMode === "agent" ? "active" : ""}
+                          onClick={() => {
+                            setFunnelMode("agent");
+                            // if agent selection empty, it will auto-pick in memo
+                          }}
+                        >
+                          By Agent
+                        </button>
+                      </div>
+
+                      {funnelMode === "agent" ? (
+                        <select
+                          className="select"
+                          style={{ width: 260 }}
+                          value={funnelData.agentName}
+                          onChange={(e) => setSelectedAgent(e.target.value)}
+                        >
+                          {funnelData.agents.map((a) => (
+                            <option key={a} value={a}>
+                              {a}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
+                    </div>
+
+                    <div className="roi-badges">
+                      {(() => {
+                        const f =
+                          funnelMode === "agent"
+                            ? funnelData.agentFunnel
+                            : funnelData.agency;
+                        const worst = f?.worstTransition;
+                        if (!worst) return null;
+                        return (
+                          <span
+                            className="funnel-badge warn"
+                            title="Lowest conversion between stages"
+                          >
+                            Biggest drop: {worst.from} → {worst.to} (
+                            {pct(worst.rate)})
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="table-wrap">
+                    {(() => {
+                      const f =
+                        funnelMode === "agent"
+                          ? funnelData.agentFunnel
+                          : funnelData.agency;
+                      if (!f) {
+                        return (
+                          <div
+                            style={{
+                              padding: 14,
+                              color: "var(--muted)",
+                              fontWeight: 700,
+                            }}
+                          >
+                            No funnel data for the selected date range.
+                          </div>
+                        );
+                      }
+
+                      const worstKey = f.worstTransition
+                        ? `${f.worstTransition.from}->${f.worstTransition.to}`
+                        : "";
+
+                      return (
+                        <table className="funnel-table">
+                          <thead>
+                            <tr>
+                              <th>Transition</th>
+                              <th className="right">From</th>
+                              <th className="right">To</th>
+                              <th className="right">% of Previous</th>
+                              <th className="right">Drop-off</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {f.transitions.map((t) => {
+                              const key = `${t.from}->${t.to}`;
+                              const isWorst =
+                                key === worstKey && t.fromCount > 0;
+                              return (
+                                <tr
+                                  key={key}
+                                  className={isWorst ? "funnel-row-worst" : ""}
+                                >
+                                  <td style={{ fontWeight: 900 }}>
+                                    {t.from} → {t.to}
+                                  </td>
+                                  <td className="right">
+                                    {Math.round(t.fromCount).toLocaleString()}
+                                  </td>
+                                  <td className="right">
+                                    {Math.round(t.toCount).toLocaleString()}
+                                  </td>
+                                  <td className="right">{pct(t.rate)}</td>
+                                  <td className="right">{pct(t.drop)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="funnel-help">
+                    Tip: a low <b>Contacts / Dials</b> suggests list quality or
+                    dialing strategy issues. A low <b>Quotes / Contacts</b>{" "}
+                    suggests needs discovery/pitch issues. A low{" "}
+                    <b>Issued / Quotes</b> suggests follow-up, objections, or
+                    underwriting friction.
+                  </div>
+                </div>
+              ) : null}
 
               {/* Lead Source ROI */}
               <div className="table-card" style={{ marginTop: 16 }}>

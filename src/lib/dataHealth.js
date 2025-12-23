@@ -18,6 +18,21 @@ function toNum(v) {
   return Number.isFinite(n) ? n : NaN;
 }
 
+function lower(s) {
+  return String(s ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function sumKey(rows, key) {
+  let total = 0;
+  for (const r of rows || []) {
+    const v = toNum(r?.[key]);
+    if (!Number.isNaN(v)) total += v;
+  }
+  return total;
+}
+
 /**
  * Computes health stats for the normalized datasets.
  * Pass in normalized rows (already mapped to your canonical keys).
@@ -165,9 +180,33 @@ export function computeDataHealth({
     if (!qsSources.has(s)) paidSourcesWithNoQuoteSales += 1;
   }
 
+  // Cross-file totals consistency:
+  // Activity totals should match counts in Quotes/Sales log (within the same date range in the UI)
+  const activityQuotesTotal = sumKey(activityRows, "total_quotes");
+  const activitySalesTotal = sumKey(activityRows, "total_sales");
+
+  let logQuotedOrIssued = 0;
+  let logIssued = 0;
+
+  for (const r of quoteSalesRows) {
+    const st = lower(r.status);
+    if (st === "quoted" || st === "issued") logQuotedOrIssued += 1;
+    if (st === "issued") logIssued += 1;
+  }
+
+  const quotesDelta = activityQuotesTotal - logQuotedOrIssued;
+  const salesDelta = activitySalesTotal - logIssued;
+
   const cross = {
     paidSourcesWithNoQuoteSales,
     paidSourcesCount: paidSources.size,
+
+    activityQuotesTotal,
+    activitySalesTotal,
+    logQuotedOrIssued,
+    logIssued,
+    quotesDelta,
+    salesDelta,
   };
 
   return { activity, quotesSales, paidLeads, cross };
