@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { SCHEMAS } from "./lib/schemas";
 import { parseCsvFile } from "./lib/csv";
@@ -20,6 +20,10 @@ import { computeDataHealth } from "./lib/dataHealth";
 import { computeAgentMetrics } from "./lib/agentMetrics";
 import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
 import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
+import FunnelDiagnostics from "./components/funnel/FunnelDiagnostics";
+import DataHealthPanel from "./components/health/DataHealthPanel";
+import KPIGoals from "./components/goals/KPIGoals";
+import { clampNum } from "./lib/formatHelpers";
 
 function UploadIcon() {
   return (
@@ -204,6 +208,39 @@ export default function App() {
 
   const [funnelMode, setFunnelMode] = useState("agency"); // "agency" | "agent"
   const [selectedAgent, setSelectedAgent] = useState("");
+
+  // KPI Goals (starting with funnel targets)
+  const [kpiGoals, setKpiGoals] = useState({
+    contactRateTargetPct: 10, // Dials -> Contacts
+    quoteRateTargetPct: 30, // Contacts -> Quotes
+    issueRateTargetPct: 35, // Quotes -> Issued
+  });
+
+  function updateGoal(key, raw) {
+    // store as number (percent units)
+    const next = clampNum(raw, 0, 100);
+    setKpiGoals?.((prev) => ({ ...(prev || kpiGoals), [key]: next }));
+  }
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("agencyPulse.kpiGoals");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setKpiGoals((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("agencyPulse.kpiGoals", JSON.stringify(kpiGoals));
+    } catch {
+      // ignore
+    }
+  }, [kpiGoals]);
 
   const [datasets, setDatasets] = useState({
     activity: null,
@@ -810,7 +847,7 @@ export default function App() {
               </div>
 
               {/* Data Health & Integrity Panel */}
-              {health ? (
+              {/* {health ? (
                 <div className="health">
                   <div className="health-head">
                     <div>
@@ -873,7 +910,6 @@ export default function App() {
                               ).toLocaleString()}`}
                               count={Math.abs(health.cross.quotesDelta)}
                             />
-
                             <HealthItem
                               label="Cross-file totals mismatch (Issued)"
                               note={`Activity Total Sales: ${Math.round(
@@ -883,7 +919,6 @@ export default function App() {
                               ).toLocaleString()}`}
                               count={Math.abs(health.cross.salesDelta)}
                             />
-
                             <HealthItem
                               label="Non-numeric activity counts"
                               note="Examples: 'ten', 'N/A', or formatted text."
@@ -965,7 +1000,14 @@ export default function App() {
                     </div>
                   ) : null}
                 </div>
-              ) : null}
+              ) : null} */}
+              <DataHealthPanel
+                health={health}
+                open={healthOpen}
+                onToggle={() => setHealthOpen((v) => !v)}
+              />
+
+              <KPIGoals goals={kpiGoals} updateGoal={updateGoal} />
 
               <div className="kpi-grid" style={{ marginTop: 14 }}>
                 <div className="kpi">
@@ -993,9 +1035,7 @@ export default function App() {
                   <div className="kpi-value">
                     {metrics ? pct(metrics.conversionRate) : "—"}
                   </div>
-                  <div className="kpi-hint">
-                    Issued / Quoted (simple MVP definition).
-                  </div>
+                  <div className="kpi-hint">Issued / (Quoted + Issued).</div>
                 </div>
 
                 <div className="kpi">
@@ -1147,149 +1187,15 @@ export default function App() {
               </div>
 
               {/* Funnel Diagnostics */}
-              {funnelData ? (
-                <div className="table-card" style={{ marginTop: 16 }}>
-                  <div className="table-toolbar">
-                    <div className="toolbar-left">
-                      <div>
-                        <div className="toolbar-title">Funnel Diagnostics</div>
-                        <div className="small">
-                          Where performance drops: Dials → Contacts → Quotes →
-                          Issued.
-                        </div>
-                      </div>
-
-                      <div className="seg" style={{ marginLeft: 6 }}>
-                        <button
-                          type="button"
-                          className={funnelMode === "agency" ? "active" : ""}
-                          onClick={() => setFunnelMode("agency")}
-                        >
-                          Agency
-                        </button>
-                        <button
-                          type="button"
-                          className={funnelMode === "agent" ? "active" : ""}
-                          onClick={() => {
-                            setFunnelMode("agent");
-                            // if agent selection empty, it will auto-pick in memo
-                          }}
-                        >
-                          By Agent
-                        </button>
-                      </div>
-
-                      {funnelMode === "agent" ? (
-                        <select
-                          className="select"
-                          style={{ width: 260 }}
-                          value={funnelData.agentName}
-                          onChange={(e) => setSelectedAgent(e.target.value)}
-                        >
-                          {funnelData.agents.map((a) => (
-                            <option key={a} value={a}>
-                              {a}
-                            </option>
-                          ))}
-                        </select>
-                      ) : null}
-                    </div>
-
-                    <div className="roi-badges">
-                      {(() => {
-                        const f =
-                          funnelMode === "agent"
-                            ? funnelData.agentFunnel
-                            : funnelData.agency;
-                        const worst = f?.worstTransition;
-                        if (!worst) return null;
-                        return (
-                          <span
-                            className="funnel-badge warn"
-                            title="Lowest conversion between stages"
-                          >
-                            Biggest drop: {worst.from} → {worst.to} (
-                            {pct(worst.rate)})
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-
-                  <div className="table-wrap">
-                    {(() => {
-                      const f =
-                        funnelMode === "agent"
-                          ? funnelData.agentFunnel
-                          : funnelData.agency;
-                      if (!f) {
-                        return (
-                          <div
-                            style={{
-                              padding: 14,
-                              color: "var(--muted)",
-                              fontWeight: 700,
-                            }}
-                          >
-                            No funnel data for the selected date range.
-                          </div>
-                        );
-                      }
-
-                      const worstKey = f.worstTransition
-                        ? `${f.worstTransition.from}->${f.worstTransition.to}`
-                        : "";
-
-                      return (
-                        <table className="funnel-table">
-                          <thead>
-                            <tr>
-                              <th>Transition</th>
-                              <th className="right">From</th>
-                              <th className="right">To</th>
-                              <th className="right">% of Previous</th>
-                              <th className="right">Drop-off</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {f.transitions.map((t) => {
-                              const key = `${t.from}->${t.to}`;
-                              const isWorst =
-                                key === worstKey && t.fromCount > 0;
-                              return (
-                                <tr
-                                  key={key}
-                                  className={isWorst ? "funnel-row-worst" : ""}
-                                >
-                                  <td style={{ fontWeight: 900 }}>
-                                    {t.from} → {t.to}
-                                  </td>
-                                  <td className="right">
-                                    {Math.round(t.fromCount).toLocaleString()}
-                                  </td>
-                                  <td className="right">
-                                    {Math.round(t.toCount).toLocaleString()}
-                                  </td>
-                                  <td className="right">{pct(t.rate)}</td>
-                                  <td className="right">{pct(t.drop)}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      );
-                    })()}
-                  </div>
-
-                  <div className="funnel-help">
-                    Tip: a low <b>Contacts / Dials</b> suggests list quality or
-                    dialing strategy issues. A low <b>Quotes / Contacts</b>{" "}
-                    suggests needs discovery/pitch issues. A low{" "}
-                    <b>Issued / Quotes</b> suggests follow-up, objections, or
-                    underwriting friction.
-                  </div>
-                </div>
-              ) : null}
+              <FunnelDiagnostics
+                funnelData={funnelData}
+                funnelMode={funnelMode}
+                setFunnelMode={setFunnelMode}
+                selectedAgent={selectedAgent}
+                setSelectedAgent={setSelectedAgent}
+                goals={kpiGoals}
+                setKpiGoals={setKpiGoals}
+              />
 
               {/* Lead Source ROI */}
               <div className="table-card" style={{ marginTop: 16 }}>
@@ -1474,6 +1380,7 @@ export default function App() {
                     setRangeMode("all");
                     setCustomStart("");
                     setCustomEnd("");
+                    // keep KPI goals persisted unless you want to reset them too
                   }}
                 >
                   Start Over

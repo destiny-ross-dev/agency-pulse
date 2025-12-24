@@ -435,7 +435,6 @@ select {
 }
 
 .table-wrap {
-  border: 1px solid var(--border);
   border-radius: var(--r-2xl);
   overflow: auto;
   scrollbar-gutter: stable; /* prevents width jump when scrollbar appears */
@@ -978,9 +977,216 @@ tbody tr:hover {
   background: rgba(255, 241, 242, 0.65); /* rose tint */
 }
 
+.funnel-tip-wrap {
+  padding: 10px 14px 14px;
+}
+
 .funnel-help {
-  margin-top: 10px;
+  margin: 0; /* prevent margin-collapsing weirdness */
+  padding-top: 10px; /* space from table edge */
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+/* If your .table-wrap uses overflow for horizontal scroll, this prevents tip from sitting under it */
+.table-wrap {
+  padding-bottom: 6px;
+}
+
+.funnel-row-good {
+  background: rgba(240, 253, 244, 0.9);
+}
+.funnel-row-warn {
+  background: rgba(254, 252, 232, 0.9);
+}
+.funnel-row-bad {
+  background: rgba(255, 241, 242, 0.85);
+}
+
+/* KPI Goals section */
+.goals-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+@media (max-width: 960px) {
+  .goals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.goal-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-2xl);
+  background: white;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.goal-card .head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+.goal-card .title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 950;
+  color: #0f172a;
+}
+.goal-card .sub {
+  margin: 6px 0 0;
   font-size: 13px;
   color: var(--muted);
   font-weight: 650;
+}
+.goal-card .body {
+  padding: 12px 14px;
+}
+
+.goal-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.goal-row:last-child {
+  border-bottom: 0;
+}
+
+.goal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.goal-label b {
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f172a;
+}
+.goal-label span {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+/* KPI Goals input — match AgencyPulse theme */
+.goal-input {
+  width: 96px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 16px;
+  text-align: right;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+    transform 0.05s ease;
+}
+
+.goal-input:hover {
+  border-color: #cbd5e1;
+}
+
+.goal-input:focus {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04), 0 0 0 4px rgba(59, 130, 246, 0.14);
+}
+
+.goal-input:active {
+  transform: translateY(0.5px);
+}
+
+/* Remove default number spinners (Chrome/Safari/Edge) */
+.goal-input::-webkit-outer-spin-button,
+.goal-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.goal-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Optional: tighten the KPI Goals layout so each row looks aligned */
+.kpi-goal-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.kpi-goal-meta {
+  min-width: 0;
+}
+
+.kpi-goal-title {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.kpi-goal-sub {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.goal-unit {
+  font-size: 12px;
+  font-weight: 850;
+  color: #475569;
+}
+
+.funnel-row-good td {
+  background: rgba(34, 197, 94, 0.1);
+}
+.funnel-row-warn td {
+  background: rgba(245, 158, 11, 0.1);
+}
+.funnel-row-bad td {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.table,
+.funnel-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: none;
+}
+
+.table th,
+.table td,
+.funnel-table th,
+.funnel-table td {
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.table tbody tr:last-child td,
+.funnel-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.funnel-table tbody tr:first-child td:first-child {
+  border-top-left-radius: 12px;
+}
+
+.funnel-table tbody tr:first-child td:last-child {
+  border-top-right-radius: 12px;
+}
+
+.funnel-table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 12px;
+}
+
+.funnel-table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 12px;
 }
