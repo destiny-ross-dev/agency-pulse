@@ -9,6 +9,7 @@ export default function DataImport({
   busyKey,
   allUploaded,
   onPickFile,
+  onLoadDemo,
   onNext,
 }) {
   return (
@@ -55,7 +56,14 @@ export default function DataImport({
       </div>
 
       <div className="actions">
-        <button className="btn primary" disabled={!allUploaded} onClick={onNext}>
+        <button className="btn" onClick={onLoadDemo}>
+          Load Demo
+        </button>
+        <button
+          className="btn primary"
+          disabled={!allUploaded}
+          onClick={onNext}
+        >
           Continue to Mapping
         </button>
       </div>

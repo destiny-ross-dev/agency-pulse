@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { SCHEMAS } from "./lib/schemas";
-import { parseCsvFile } from "./lib/csv";
+import { parseCsvFile, parseCsvText } from "./lib/csv";
 import { suggestMapping } from "./lib/mapping";
 import { normalizeRows } from "./lib/normalize";
 import { computeCoreMetrics } from "./lib/kpis";
@@ -33,6 +33,21 @@ const stepPaths = {
   1: "/import-data",
   2: "/map-columns",
   3: "/dashboard",
+};
+
+const DEMO_FILES = {
+  activity: {
+    url: new URL("./data/activity-tracker.csv", import.meta.url).href,
+    fileName: "activity-tracker.csv",
+  },
+  quotesSales: {
+    url: new URL("./data/quotes-and-sales-log.csv", import.meta.url).href,
+    fileName: "quotes-and-sales-log.csv",
+  },
+  paidLeads: {
+    url: new URL("./data/lead-source-info.csv", import.meta.url).href,
+    fileName: "lead-source-info.csv",
+  },
 };
 
 function StepWorkflow({ step }) {
@@ -129,6 +144,7 @@ function StepWorkflow({ step }) {
       try {
         const parsed = await parseCsvFile(file);
         const schema = SCHEMAS[datasetKey];
+
         const suggested = suggestMapping(parsed.headers, schema.requiredFields);
 
         setDatasets((prev) => ({ ...prev, [datasetKey]: parsed }));
@@ -141,6 +157,32 @@ function StepWorkflow({ step }) {
     };
 
     input.click();
+  }
+
+  async function handleLoadDemo() {
+    setError("");
+    try {
+      for (const datasetKey of Object.keys(DEMO_FILES)) {
+        setBusyKey(datasetKey);
+        const { url, fileName } = DEMO_FILES[datasetKey];
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to load ${fileName}`);
+        }
+        const text = await response.text();
+        const parsed = await parseCsvText(text, fileName);
+        const schema = SCHEMAS[datasetKey];
+        const suggested = suggestMapping(parsed.headers, schema.requiredFields);
+        setDatasets((prev) => ({ ...prev, [datasetKey]: parsed }));
+        setMappings((prev) => ({ ...prev, [datasetKey]: suggested }));
+      }
+    } catch (err) {
+      setError(
+        err?.message || "Failed to load demo data. Please try again."
+      );
+    } finally {
+      setBusyKey("");
+    }
   }
 
   function handleMappingChange(datasetKey, fieldKey, value) {
@@ -260,7 +302,9 @@ function StepWorkflow({ step }) {
   }
 
   function getQuoteSalesDate(row) {
-    const status = String(row?.status || "").trim().toLowerCase();
+    const status = String(row?.status || "")
+      .trim()
+      .toLowerCase();
     if (status === "issued") {
       return row?.date_issued || row?.date;
     }
@@ -347,8 +391,7 @@ function StepWorkflow({ step }) {
 
   const issuedPremiumSeries = useMemo(() => {
     if (step !== 3) return { buckets: [], agents: [], granularity: "month" };
-    if (!filteredRows)
-      return { buckets: [], agents: [], granularity: "month" };
+    if (!filteredRows) return { buckets: [], agents: [], granularity: "month" };
 
     return computeIssuedPremiumSeries({
       quoteSalesRows: filteredRows.quoteSalesRows,
@@ -461,6 +504,7 @@ function StepWorkflow({ step }) {
             busyKey={busyKey}
             allUploaded={allUploaded}
             onPickFile={handlePickFile}
+            onLoadDemo={handleLoadDemo}
             onNext={next}
           />
         ) : null}
