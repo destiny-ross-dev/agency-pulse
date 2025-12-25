@@ -53,6 +53,11 @@ export default function StackedAreaChart({ series, height = 240 }) {
     }));
   }, [buckets]);
 
+  const maxTotal = useMemo(() => {
+    if (buckets.length === 0) return 0;
+    return Math.max(...buckets.map((bucket) => bucket.total || 0), 0);
+  }, [buckets]);
+
   if (isEmpty) {
     return (
       <div className="chart-empty">
