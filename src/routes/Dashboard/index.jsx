@@ -57,7 +57,7 @@ export default function Dashboard({
           <div className="filters-left">
             <span className="filters-title">Date Range</span>
 
-            <div className="seg">
+            <div className="seg seg-scroll">
               <SegButton
                 active={rangeMode === "all"}
                 onClick={() => setRangeMode("all")}
@@ -97,44 +97,45 @@ export default function Dashboard({
             </div>
 
             {rangeMode === "custom" ? (
-              <>
+              <div className="date-range-inputs">
                 <input
                   className="date-input"
                   type="date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
                 />
-                <span style={{ color: "var(--muted2)", fontWeight: 800 }}>
-                  to
-                </span>
+                <span className="date-sep">to</span>
                 <input
                   className="date-input"
                   type="date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
                 />
-              </>
+              </div>
             ) : null}
           </div>
 
           <div className="filters-right">
-            {coverage ? (
-              <div
-                className="coverage"
-                title="Date coverage detected from your uploaded files"
-              >
-                <span className="dot" />
-                <span className="label">Coverage:</span>
-                <span className="range">
-                  {formatYMD(coverage.start)} → {formatYMD(coverage.end)}
-                </span>
-              </div>
-            ) : (
-              <span>Coverage: —</span>
-            )}
-
-            <span style={{ marginLeft: 10 }}>Showing:</span>
-            <span style={{ color: "#334155" }}>{rangeLabel}</span>
+            <div className="coverage-block">
+              {coverage ? (
+                <div
+                  className="coverage"
+                  title="Date coverage detected from your uploaded files"
+                >
+                  <span className="dot" />
+                  <span className="label">Coverage:</span>
+                  <span className="range">
+                    {formatYMD(coverage.start)} → {formatYMD(coverage.end)}
+                  </span>
+                </div>
+              ) : (
+                <span>Coverage: —</span>
+              )}
+            </div>
+            <div className="filters-meta">
+              <span>Showing:</span>
+              <span className="filters-range">{rangeLabel}</span>
+            </div>
           </div>
         </div>
 
@@ -199,7 +200,7 @@ export default function Dashboard({
                 </div>
               </div>
 
-              <div className="seg" style={{ marginLeft: 6 }}>
+              <div className="seg seg-scroll" style={{ marginLeft: 6 }}>
                 <button
                   type="button"
                   className={agentView === "totals" ? "active" : ""}
@@ -343,7 +344,7 @@ export default function Dashboard({
                 </div>
               </div>
 
-              <div className="seg" style={{ marginLeft: 6 }}>
+              <div className="seg seg-scroll" style={{ marginLeft: 6 }}>
                 <button
                   type="button"
                   className={roiSort === "premiumPerSpend" ? "active" : ""}
@@ -367,7 +368,7 @@ export default function Dashboard({
                 </button>
               </div>
 
-              <div className="seg" style={{ marginLeft: 6 }}>
+              <div className="seg seg-scroll" style={{ marginLeft: 6 }}>
                 <button
                   type="button"
                   className={roiScope === "paid" ? "active" : ""}

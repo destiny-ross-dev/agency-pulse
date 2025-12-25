@@ -20,31 +20,16 @@ export default function MapColumns({
 
         return (
           <Card key={key} pad>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="mapping-card-head">
               <div>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
-                  {schema.label}
-                </h3>
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    color: "var(--muted)",
-                    fontSize: 13,
-                  }}
-                >
+                <h3 className="mapping-title">{schema.label}</h3>
+                <p className="mapping-subtitle">
                   {schema.description} •{" "}
                   <b style={{ color: "#334155" }}>{ds.fileName}</b>
                 </p>
               </div>
 
-              <div>
+              <div className="mapping-card-actions">
                 <button className="btn" onClick={() => onReupload(key)}>
                   Re-upload
                 </button>

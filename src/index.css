@@ -439,6 +439,30 @@ select {
   overflow: hidden;
 }
 
+.mapping-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mapping-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.mapping-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mapping-card-actions {
+  display: flex;
+  align-items: center;
+}
+
 .mapping-header {
   background: #f8fafc;
   border-bottom: 1px solid var(--border);
@@ -702,6 +726,37 @@ tbody tr:hover {
   color: var(--muted);
   font-size: 13px;
   font-weight: 750;
+}
+
+.coverage-block {
+  display: flex;
+  align-items: center;
+}
+
+.filters-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filters-range {
+  color: #334155;
+}
+
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-sep {
+  color: var(--muted2);
+  font-weight: 800;
+}
+
+.seg-scroll {
+  max-width: 100%;
 }
 
 /* Coverage badge */
@@ -969,6 +1024,10 @@ tbody tr:hover {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   background: #f8fafc;
+}
+
+.funnel-select {
+  width: 260px;
 }
 
 .toolbar-left {
@@ -1333,4 +1392,142 @@ tbody tr:hover {
 
 .funnel-table tbody tr:last-child td:last-child {
   border-bottom-right-radius: 12px;
+}
+
+@media (max-width: 720px) {
+  .container {
+    padding: 22px 16px 40px;
+  }
+
+  .topbar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .user-text {
+    display: none;
+  }
+
+  .page-title {
+    font-size: 30px;
+  }
+
+  .page-subtitle {
+    font-size: 15px;
+  }
+
+  .card.pad {
+    padding: 20px;
+    max-width: 92vw;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+
+  .mapping-header,
+  .mapping-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mapping-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mapping-card-actions {
+    width: 100%;
+  }
+
+  .mapping-card-actions .btn {
+    width: 100%;
+  }
+
+  .kpi-value {
+    font-size: 30px;
+  }
+
+  .filters-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filters-left {
+    width: 100%;
+  }
+
+  .filters-meta {
+    width: 100%;
+  }
+
+  .coverage-block {
+    width: 100%;
+  }
+
+  .coverage {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .date-range-inputs {
+    width: 100%;
+  }
+
+  .date-range-inputs .date-input {
+    width: 100%;
+  }
+
+  .date-sep {
+    display: none;
+  }
+
+  .seg-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .seg-scroll button {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  table,
+  .table,
+  .funnel-table {
+    min-width: 720px;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbar-left {
+    width: 100%;
+  }
+
+  .roi-badges {
+    width: 100%;
+  }
+
+  .funnel-select {
+    width: 100%;
+  }
+
+  .health-head,
+  .goals-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

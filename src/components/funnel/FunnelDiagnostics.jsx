@@ -115,7 +115,7 @@ export default function FunnelDiagnostics({
               </div>
             </div>
 
-            <div className="seg" style={{ marginLeft: 6 }}>
+            <div className="seg seg-scroll" style={{ marginLeft: 6 }}>
               <button
                 type="button"
                 className={funnelMode === "agency" ? "active" : ""}
@@ -134,8 +134,7 @@ export default function FunnelDiagnostics({
 
             {funnelMode === "agent" ? (
               <select
-                className="select"
-                style={{ width: 260 }}
+                className="select funnel-select"
                 value={funnelData.agentName || selectedAgent || ""}
                 onChange={(e) => setSelectedAgent?.(e.target.value)}
               >
