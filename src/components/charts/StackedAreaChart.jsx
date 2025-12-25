@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatMoneyShort } from "../../lib/formatHelpers";
 
 const COLORS = [
   "#2563eb",
@@ -19,12 +20,6 @@ const COLORS = [
   "#facc15",
   "#14b8a6",
 ];
-
-function formatMoneyShort(value) {
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-  return `$${value.toFixed(0)}`;
-}
 
 function StackedAreaTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -71,9 +66,7 @@ export default function StackedAreaChart({ series, height = 240 }) {
       <div className="stacked-area-header">
         <div>
           <div className="chart-title">Issued Premium by Agent</div>
-          <div className="chart-subtitle">
-            Stacked totals per time period.
-          </div>
+          <div className="chart-subtitle">Stacked totals per time period.</div>
         </div>
         <div className="chart-scale">
           <span>Max:</span> {formatMoneyShort(maxTotal)}
