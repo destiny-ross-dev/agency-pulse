@@ -202,19 +202,7 @@ select {
   font-weight: 600;
 }
 
-.stacked-area-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.stacked-area-canvas {
-  position: relative;
-}
-
 .chart-tooltip {
-  position: absolute;
-  transform: translate(-50%, -100%);
   background: white;
   border: 1px solid var(--border);
   border-radius: 10px;

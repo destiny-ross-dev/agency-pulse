@@ -1,4 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const COLORS = [
   "#2563eb",
@@ -11,64 +20,38 @@ const COLORS = [
   "#14b8a6",
 ];
 
-function buildAreaPath(pointsTop, pointsBottom) {
-  if (pointsTop.length === 0) return "";
-  const path = [];
-  path.push(`M ${pointsTop[0].x} ${pointsTop[0].y}`);
-  for (const pt of pointsTop.slice(1)) {
-    path.push(`L ${pt.x} ${pt.y}`);
-  }
-  for (const pt of pointsBottom.slice().reverse()) {
-    path.push(`L ${pt.x} ${pt.y}`);
-  }
-  path.push("Z");
-  return path.join(" ");
-}
-
 function formatMoneyShort(value) {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
   return `$${value.toFixed(0)}`;
 }
 
+function StackedAreaTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const entry = payload[0];
+
+  return (
+    <div className="chart-tooltip">
+      <div className="tooltip-title">{entry.name}</div>
+      <div className="tooltip-label">{label}</div>
+      <div className="tooltip-value">
+        {formatMoneyShort(Number(entry.value) || 0)}
+      </div>
+    </div>
+  );
+}
+
 export default function StackedAreaChart({ series, height = 240 }) {
   const buckets = series?.buckets || [];
   const agents = series?.agents || [];
-  const [tooltip, setTooltip] = useState(null);
   const isEmpty = buckets.length === 0 || agents.length === 0;
 
-  const width = 720;
-  const padding = { top: 16, right: 18, bottom: 40, left: 56 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-  const maxTotal = Math.max(...buckets.map((b) => b.total || 0), 1);
-  const bucketCount = buckets.length;
-
-  const xForIndex = (index) => {
-    if (bucketCount === 1) return padding.left + chartWidth / 2;
-    return padding.left + (chartWidth * index) / (bucketCount - 1);
-  };
-
-  const yForValue = (value) => {
-    const ratio = value / maxTotal;
-    return padding.top + chartHeight - ratio * chartHeight;
-  };
-
-  const stacks = agents.map(() => []);
-  const bottoms = agents.map(() => []);
-
-  const bucketStacks = useMemo(() => {
-    return buckets.map((bucket) => {
-      let offset = 0;
-      return agents.map((agent) => {
-        const value = bucket.totals?.[agent] || 0;
-        const start = offset;
-        const end = offset + value;
-        offset = end;
-        return { agent, value, start, end };
-      });
-    });
-  }, [agents, buckets]);
+  const chartData = useMemo(() => {
+    return buckets.map((bucket) => ({
+      label: bucket.label,
+      ...bucket.totals,
+    }));
+  }, [buckets]);
 
   if (isEmpty) {
     return (
@@ -76,85 +59,6 @@ export default function StackedAreaChart({ series, height = 240 }) {
         No issued premium data available for this date range.
       </div>
     );
-  }
-
-  for (let i = 0; i < bucketCount; i += 1) {
-    let offset = 0;
-    for (let a = 0; a < agents.length; a += 1) {
-      const agent = agents[a];
-      const value = buckets[i].totals?.[agent] || 0;
-      const bottom = offset;
-      const top = offset + value;
-      stacks[a].push({ x: xForIndex(i), y: yForValue(top) });
-      bottoms[a].push({ x: xForIndex(i), y: yForValue(bottom) });
-      offset = top;
-    }
-  }
-
-  const tickStep =
-    bucketCount <= 8 ? 1 : bucketCount <= 16 ? 2 : Math.ceil(bucketCount / 8);
-
-  function handleMouseLeave() {
-    setTooltip(null);
-  }
-
-  function handleMouseMove(event) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-
-    if (
-      x < padding.left ||
-      x > padding.left + chartWidth ||
-      y < padding.top ||
-      y > padding.top + chartHeight
-    ) {
-      setTooltip(null);
-      return;
-    }
-
-    const relativeX = x - padding.left;
-    const index =
-      bucketCount === 1
-        ? 0
-        : Math.round((relativeX / chartWidth) * (bucketCount - 1));
-
-    const bucketIndex = Math.min(
-      bucketCount - 1,
-      Math.max(0, index || 0)
-    );
-
-    const valueAtY =
-      maxTotal * (1 - (y - padding.top) / chartHeight);
-    const stack = bucketStacks[bucketIndex];
-
-    if (!stack) {
-      setTooltip(null);
-      return;
-    }
-
-    const segment = stack.find(
-      (entry) => valueAtY >= entry.start && valueAtY <= entry.end
-    );
-
-    if (!segment || segment.value === 0) {
-      setTooltip(null);
-      return;
-    }
-
-    const tooltipX = Math.min(
-      padding.left + chartWidth - 10,
-      Math.max(padding.left + 10, x)
-    );
-    const tooltipY = Math.max(12, y - 12);
-
-    setTooltip({
-      x: tooltipX,
-      y: tooltipY,
-      agent: segment.agent,
-      value: segment.value,
-      label: buckets[bucketIndex].label,
-    });
   }
 
   return (
@@ -171,80 +75,40 @@ export default function StackedAreaChart({ series, height = 240 }) {
         </div>
       </div>
       <div className="stacked-area-canvas">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-label="Issued premium stacked area chart"
-          className="stacked-area-svg"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        >
-        <rect
-          x={padding.left}
-          y={padding.top}
-          width={chartWidth}
-          height={chartHeight}
-          fill="none"
-          stroke="#e2e8f0"
-        />
-
-        {[0.25, 0.5, 0.75].map((t) => {
-          const y = yForValue(maxTotal * t);
-          return (
-            <g key={t}>
-              <line
-                x1={padding.left}
-                x2={padding.left + chartWidth}
-                y1={y}
-                y2={y}
-                stroke="#e2e8f0"
-                strokeDasharray="4 6"
+        <ResponsiveContainer width="100%" height={height}>
+          <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 12 }}>
+            <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 6" />
+            <XAxis
+              dataKey="label"
+              interval={0}
+              tick={{ fontSize: 11, fill: "#64748b" }}
+            />
+            <YAxis
+              tickFormatter={formatMoneyShort}
+              tick={{ fontSize: 11, fill: "#94a3b8" }}
+              width={60}
+            />
+            <Tooltip
+              content={<StackedAreaTooltip />}
+              formatter={(value) => formatMoneyShort(Number(value) || 0)}
+              labelFormatter={(label) => label}
+              shared={false}
+            />
+            {agents.map((agent, index) => (
+              <Area
+                key={agent}
+                type="monotone"
+                dataKey={agent}
+                name={agent}
+                stackId="issued"
+                stroke={COLORS[index % COLORS.length]}
+                fill={COLORS[index % COLORS.length]}
+                fillOpacity={0.75}
+                isAnimationActive={false}
               />
-              <text x={8} y={y + 4} fontSize="11" fill="#94a3b8">
-                {formatMoneyShort(maxTotal * t)}
-              </text>
-            </g>
-          );
-        })}
-
-        {agents.map((agent, index) => (
-          <path
-            key={agent}
-            d={buildAreaPath(stacks[index], bottoms[index])}
-            fill={COLORS[index % COLORS.length]}
-            opacity={0.75}
-          />
-        ))}
-
-        {buckets.map((bucket, index) => {
-          if (index % tickStep !== 0) return null;
-          const x = xForIndex(index);
-          return (
-            <text
-              key={bucket.key}
-              x={x}
-              y={height - 14}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#64748b"
-            >
-              {bucket.label}
-            </text>
-          );
-        })}
-        </svg>
-        {tooltip ? (
-          <div
-            className="chart-tooltip"
-            style={{ left: tooltip.x, top: tooltip.y }}
-          >
-            <div className="tooltip-title">{tooltip.agent}</div>
-            <div className="tooltip-label">{tooltip.label}</div>
-            <div className="tooltip-value">
-              {formatMoneyShort(tooltip.value)}
-            </div>
-          </div>
-        ) : null}
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
       <div className="stacked-area-legend">
         {agents.map((agent, index) => (
