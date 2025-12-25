@@ -75,6 +75,18 @@ export default function Dashboard({
                 Last 30
               </SegButton>
               <SegButton
+                active={rangeMode === "90d"}
+                onClick={() => setRangeMode("90d")}
+              >
+                Last 90
+              </SegButton>
+              <SegButton
+                active={rangeMode === "365d"}
+                onClick={() => setRangeMode("365d")}
+              >
+                Last Year
+              </SegButton>
+              <SegButton
                 active={rangeMode === "custom"}
                 onClick={() => setRangeMode("custom")}
               >

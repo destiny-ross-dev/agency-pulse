@@ -201,15 +201,19 @@ function StepWorkflow({ step }) {
   const coverage = useMemo(() => {
     if (!canAnalyze) return null;
 
-    const activityAll = normalizeRows(datasets.activity.rows, mappings.activity, {
-      numericKeys: [
-        "dials_made",
-        "contacts_made",
-        "households_quoted",
-        "total_quotes",
-        "total_sales",
-      ],
-    });
+    const activityAll = normalizeRows(
+      datasets.activity.rows,
+      mappings.activity,
+      {
+        numericKeys: [
+          "dials_made",
+          "contacts_made",
+          "households_quoted",
+          "total_quotes",
+          "total_sales",
+        ],
+      }
+    );
 
     const quoteSalesAll = normalizeRows(
       datasets.quotesSales.rows,
@@ -219,9 +223,13 @@ function StepWorkflow({ step }) {
       }
     );
 
-    const paidLeadsAll = normalizeRows(datasets.paidLeads.rows, mappings.paidLeads, {
-      numericKeys: ["lead_count", "lead_cost"],
-    });
+    const paidLeadsAll = normalizeRows(
+      datasets.paidLeads.rows,
+      mappings.paidLeads,
+      {
+        numericKeys: ["lead_count", "lead_cost"],
+      }
+    );
 
     const c1 = findCoverage(activityAll, "date");
     const c2 = findCoverage(quoteSalesAll, "date");
@@ -253,15 +261,19 @@ function StepWorkflow({ step }) {
   const normalizedAll = useMemo(() => {
     if (!canAnalyze) return null;
 
-    const activityAll = normalizeRows(datasets.activity.rows, mappings.activity, {
-      numericKeys: [
-        "dials_made",
-        "contacts_made",
-        "households_quoted",
-        "total_quotes",
-        "total_sales",
-      ],
-    });
+    const activityAll = normalizeRows(
+      datasets.activity.rows,
+      mappings.activity,
+      {
+        numericKeys: [
+          "dials_made",
+          "contacts_made",
+          "households_quoted",
+          "total_quotes",
+          "total_sales",
+        ],
+      }
+    );
 
     const quoteSalesAll = normalizeRows(
       datasets.quotesSales.rows,
@@ -271,9 +283,13 @@ function StepWorkflow({ step }) {
       }
     );
 
-    const paidLeadsAll = normalizeRows(datasets.paidLeads.rows, mappings.paidLeads, {
-      numericKeys: ["lead_count", "lead_cost"],
-    });
+    const paidLeadsAll = normalizeRows(
+      datasets.paidLeads.rows,
+      mappings.paidLeads,
+      {
+        numericKeys: ["lead_count", "lead_cost"],
+      }
+    );
 
     return { activityAll, quoteSalesAll, paidLeadsAll };
   }, [canAnalyze, datasets, mappings]);
@@ -317,6 +333,8 @@ function StepWorkflow({ step }) {
     if (rangeMode === "all") return "All Time";
     if (rangeMode === "7d") return "Last 7 days";
     if (rangeMode === "30d") return "Last 30 days";
+    if (rangeMode === "90d") return "Last 90 days";
+    if (rangeMode === "365d") return "Last year";
     if (rangeMode === "custom" && activeRange)
       return `${toInputDate(activeRange.start)} → ${toInputDate(
         activeRange.end
