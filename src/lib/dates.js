@@ -68,6 +68,18 @@ export function makePresetRange(preset) {
     return { start, end: endOfDay(today) };
   }
 
+  if (preset === "90d") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 89);
+    return { start, end: endOfDay(today) };
+  }
+
+  if (preset === "365d") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 364);
+    return { start, end: endOfDay(today) };
+  }
+
   return null;
 }
 

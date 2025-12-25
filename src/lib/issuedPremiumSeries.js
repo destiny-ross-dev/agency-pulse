@@ -1,4 +1,4 @@
-import { formatYMD, parseDateLoose, startOfDay } from "./dates";
+import { formatYMD, inRange, parseDateLoose, startOfDay } from "./dates";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 
@@ -34,7 +34,7 @@ function deriveRange(rows) {
   let max = null;
 
   for (const row of rows) {
-    const d = parseDateLoose(row?.date);
+    const d = parseDateLoose(row?.date_issued || row?.date);
     if (!d) continue;
     const day = startOfDay(d);
     if (!min || day.getTime() < min.getTime()) min = day;
@@ -43,6 +43,10 @@ function deriveRange(rows) {
 
   if (!min || !max) return null;
   return { start: min, end: max };
+}
+
+function getRowDate(row) {
+  return parseDateLoose(row?.date_issued || row?.date);
 }
 
 function formatMonthLabel(d) {
@@ -137,8 +141,9 @@ export function computeIssuedPremiumSeries({
   const bucketTotals = buckets.map(() => ({}));
 
   for (const row of issuedRows) {
-    const d = parseDateLoose(row?.date);
+    const d = getRowDate(row);
     if (!d) continue;
+    if (activeRange && !inRange(d, range.start, range.end)) continue;
 
     const idx = bucketIndexFor(d, buckets[0].start, granularity);
     if (idx < 0 || idx >= buckets.length) continue;

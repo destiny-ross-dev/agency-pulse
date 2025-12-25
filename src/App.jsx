@@ -335,10 +335,8 @@ function StepWorkflow({ step }) {
     if (!canAnalyze || !normalizedAll)
       return { buckets: [], agents: [], granularity: "month" };
 
-    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
-
     return computeIssuedPremiumSeries({
-      quoteSalesRows,
+      quoteSalesRows: normalizedAll.quoteSalesAll,
       rangeMode,
       activeRange,
     });
