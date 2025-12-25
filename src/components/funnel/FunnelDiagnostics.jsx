@@ -175,7 +175,7 @@ export default function FunnelDiagnostics({
                   <th>Transition</th>
                   <th className="right">From</th>
                   <th className="right">To</th>
-                  <th className="right">% of Previous</th>
+                  <th className="right">Rate</th>
                   <th className="right">Target</th>
                   <th className="right">Drop-off</th>
                 </tr>
@@ -208,9 +208,9 @@ export default function FunnelDiagnostics({
 
         <div className="funnel-tip-wrap">
           <div className="funnel-help">
-            Tip: a low <b>Contacts / Dials</b> suggests list quality or dialing
-            strategy issues. A low <b>Quotes / Contacts</b> suggests needs
-            discovery/pitch issues. A low <b>Issued / Quotes</b> suggests
+            Tip: a low <b>Contact Ratio</b> suggests list quality or dialing
+            strategy issues. A low <b>Quote Ratio</b> suggests needs
+            discovery/pitch issues. A low <b>Conversion Ratio</b> suggests
             follow-up, objections, or underwriting friction.
           </div>
         </div>

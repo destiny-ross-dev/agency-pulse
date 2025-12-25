@@ -25,21 +25,21 @@ export default function KPIGoals({ goals, updateGoal }) {
         <div style={{ padding: 14 }}>
           <GoalRow
             title="Contact Rate Target"
-            subtitle="Dials → Contacts (% of dials that become contacts)"
+            subtitle="Contact Ratio - Dials → Contacts"
             value={goals.contactRateTargetPct}
             onChange={(v) => updateGoal("contactRateTargetPct", v)}
           />
           <div className="hr" />
           <GoalRow
             title="Quote Rate Target"
-            subtitle="Contacts → Quotes (% of contacts that become quotes)"
+            subtitle="Pitch Ratio - Contacts → Quotes"
             value={goals.quoteRateTargetPct}
             onChange={(v) => updateGoal("quoteRateTargetPct", v)}
           />
           <div className="hr" />
           <GoalRow
-            title="Issue Rate Target"
-            subtitle="Quotes → Issued (% of quotes that issue)"
+            title="Conversion Rate Target"
+            subtitle="Conversion Ratio - Quotes → Issued"
             value={goals.issueRateTargetPct}
             onChange={(v) => updateGoal("issueRateTargetPct", v)}
           />
