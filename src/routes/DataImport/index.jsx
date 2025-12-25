@@ -1,10 +1,10 @@
-import Card from "../common/Card";
-import DropzoneTile from "../common/DropzoneTile";
-import MiniBusy from "../common/MiniBusy";
-import SectionTitle from "../common/SectionTitle";
-import { UploadIcon } from "../common/icons";
+import Card from "../../components/common/Card";
+import DropzoneTile from "../../components/common/DropzoneTile";
+import MiniBusy from "../../components/common/MiniBusy";
+import SectionTitle from "../../components/common/SectionTitle";
+import { UploadIcon } from "../../components/common/icons";
 
-export default function DataImportStep({
+export default function DataImport({
   datasets,
   busyKey,
   allUploaded,

@@ -1,8 +1,8 @@
 import { SCHEMAS } from "../../lib/schemas";
-import Card from "../common/Card";
-import Select from "../common/Select";
+import Card from "../../components/common/Card";
+import Select from "../../components/common/Select";
 
-export default function MappingStep({
+export default function MapColumns({
   datasets,
   mappings,
   onMappingChange,

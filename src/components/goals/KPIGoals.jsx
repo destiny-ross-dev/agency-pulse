@@ -2,14 +2,8 @@ import GoalRow from "./GoalRow";
 
 export default function KPIGoals({ goals, updateGoal }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 16,
-      }}
-    >
-      <div className="table-card">
+    <div className="goals-grid">
+      <div className="table-card goals-card">
         <div className="table-toolbar">
           <div className="toolbar-left">
             <div>
@@ -46,7 +40,7 @@ export default function KPIGoals({ goals, updateGoal }) {
         </div>
       </div>
 
-      <div className="table-card">
+      <div className="table-card goals-card">
         <div className="table-toolbar">
           <div className="toolbar-left">
             <div>

@@ -1,18 +1,20 @@
-import Card from "../common/Card";
-import SectionTitle from "../common/SectionTitle";
-import SegButton from "../common/SegButton";
-import { PulseIcon } from "../common/icons";
-import DataHealthPanel from "../health/DataHealthPanel";
-import KPIGoals from "../goals/KPIGoals";
-import FunnelDiagnostics from "../funnel/FunnelDiagnostics";
+import Card from "../../components/common/Card";
+import SectionTitle from "../../components/common/SectionTitle";
+import SegButton from "../../components/common/SegButton";
+import { PulseIcon } from "../../components/common/icons";
+import DataHealthPanel from "../../components/health/DataHealthPanel";
+import GoalsPanel from "../../components/goals/GoalsPanel";
+import FunnelDiagnostics from "../../components/funnel/FunnelDiagnostics";
 import { money, money2, pct, ratio } from "../../lib/formatHelpers";
 import { formatYMD } from "../../lib/dates";
 
-export default function AnalyzeStep({
+export default function Dashboard({
   metrics,
   health,
   healthOpen,
   onToggleHealth,
+  goalsOpen,
+  onToggleGoals,
   kpiGoals,
   updateGoal,
   agentRows,
@@ -128,7 +130,12 @@ export default function AnalyzeStep({
           onToggle={onToggleHealth}
         />
 
-        <KPIGoals goals={kpiGoals} updateGoal={updateGoal} />
+        <GoalsPanel
+          open={goalsOpen}
+          onToggle={onToggleGoals}
+          goals={kpiGoals}
+          updateGoal={updateGoal}
+        />
 
         <div className="kpi-grid" style={{ marginTop: 14 }}>
           <div className="kpi">

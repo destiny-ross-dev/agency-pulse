@@ -679,6 +679,58 @@ tbody tr:hover {
   font-weight: 650;
 }
 
+/* Goals Panel */
+.goals {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: var(--r-2xl);
+  border: 1px solid var(--border);
+  background: white;
+  box-shadow: var(--shadow);
+  overflow: hidden; /* keeps children inside rounded border */
+}
+
+.goals-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.goals-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.goals-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.goals-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+.goals-card {
+  margin-top: 0;
+}
+
+@media (max-width: 960px) {
+  .goals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .health-grid {
   margin-top: 12px;
   display: grid;

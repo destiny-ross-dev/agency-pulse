@@ -24,9 +24,9 @@ import { clampNum } from "./lib/formatHelpers";
 import Stepper from "./components/common/Stepper";
 import TopBar from "./components/layout/TopBar";
 import PageHeader from "./components/layout/PageHeader";
-import DataImportStep from "./components/steps/DataImportStep";
-import MappingStep from "./components/steps/MappingStep";
-import AnalyzeStep from "./components/steps/AnalyzeStep";
+import DataImport from "./routes/DataImport";
+import MapColumns from "./routes/MapColumns";
+import Dashboard from "./routes/Dashboard";
 
 const stepPaths = {
   1: "/import-data",
@@ -39,6 +39,7 @@ function StepWorkflow({ step }) {
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
   const [healthOpen, setHealthOpen] = useState(true);
+  const [goalsOpen, setGoalsOpen] = useState(true);
   const [agentView, setAgentView] = useState("totals");
 
   const [roiSort, setRoiSort] = useState("premiumPerSpend");
@@ -406,7 +407,7 @@ function StepWorkflow({ step }) {
         {error ? <div className="alert">{error}</div> : null}
 
         {step === 1 ? (
-          <DataImportStep
+          <DataImport
             datasets={datasets}
             busyKey={busyKey}
             allUploaded={allUploaded}
@@ -416,7 +417,7 @@ function StepWorkflow({ step }) {
         ) : null}
 
         {step === 2 ? (
-          <MappingStep
+          <MapColumns
             datasets={datasets}
             mappings={mappings}
             onMappingChange={handleMappingChange}
@@ -428,11 +429,13 @@ function StepWorkflow({ step }) {
         ) : null}
 
         {step === 3 ? (
-          <AnalyzeStep
+          <Dashboard
             metrics={metrics}
             health={health}
             healthOpen={healthOpen}
             onToggleHealth={() => setHealthOpen((v) => !v)}
+            goalsOpen={goalsOpen}
+            onToggleGoals={() => setGoalsOpen((v) => !v)}
             kpiGoals={kpiGoals}
             updateGoal={updateGoal}
             agentRows={agentRows}
