@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import { SCHEMAS } from "./lib/schemas";
 import { parseCsvFile } from "./lib/csv";
@@ -28,10 +28,14 @@ import DataImportStep from "./components/steps/DataImportStep";
 import MappingStep from "./components/steps/MappingStep";
 import AnalyzeStep from "./components/steps/AnalyzeStep";
 
-function StepWorkflow() {
-  const { stepId } = useParams();
+const stepPaths = {
+  1: "/import-data",
+  2: "/map-columns",
+  3: "/dashboard",
+};
+
+function StepWorkflow({ step }) {
   const navigate = useNavigate();
-  const step = Number(stepId);
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
   const [healthOpen, setHealthOpen] = useState(true);
@@ -155,13 +159,13 @@ function StepWorkflow() {
       return;
     }
     const nextStep = Math.min(3, step + 1);
-    navigate(`/step/${nextStep}`);
+    navigate(stepPaths[nextStep]);
   }
 
   function back() {
     setError("");
     const nextStep = Math.max(1, step - 1);
-    navigate(`/step/${nextStep}`);
+    navigate(stepPaths[nextStep]);
   }
 
   function resetWorkflow() {
@@ -180,7 +184,7 @@ function StepWorkflow() {
     setRangeMode("all");
     setCustomStart("");
     setCustomEnd("");
-    navigate("/step/1");
+    navigate(stepPaths[1]);
   }
 
   const activeRange = useMemo(() => {
@@ -378,18 +382,14 @@ function StepWorkflow() {
   useEffect(() => {
     if (step === 2 && !allUploaded) {
       setError("Upload all three CSV files to continue.");
-      navigate("/step/1", { replace: true });
+      navigate(stepPaths[1], { replace: true });
       return;
     }
     if (step === 3 && !canAnalyze) {
       setError("Map all required fields to continue.");
-      navigate("/step/2", { replace: true });
+      navigate(stepPaths[2], { replace: true });
     }
   }, [step, allUploaded, canAnalyze, navigate]);
-
-  if (![1, 2, 3].includes(step)) {
-    return <Navigate to="/step/1" replace />;
-  }
 
   return (
     <div>
@@ -469,9 +469,11 @@ function StepWorkflow() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/step/1" replace />} />
-      <Route path="/step/:stepId" element={<StepWorkflow />} />
-      <Route path="*" element={<Navigate to="/step/1" replace />} />
+      <Route path="/" element={<Navigate to={stepPaths[1]} replace />} />
+      <Route path="/import-data" element={<StepWorkflow step={1} />} />
+      <Route path="/map-columns" element={<StepWorkflow step={2} />} />
+      <Route path="/dashboard" element={<StepWorkflow step={3} />} />
+      <Route path="*" element={<Navigate to={stepPaths[1]} replace />} />
     </Routes>
   );
 }
