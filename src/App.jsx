@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 
 import { SCHEMAS } from "./lib/schemas";
 import { parseCsvFile } from "./lib/csv";
@@ -27,8 +28,10 @@ import DataImportStep from "./components/steps/DataImportStep";
 import MappingStep from "./components/steps/MappingStep";
 import AnalyzeStep from "./components/steps/AnalyzeStep";
 
-export default function App() {
-  const [step, setStep] = useState(1);
+function StepWorkflow() {
+  const { stepId } = useParams();
+  const navigate = useNavigate();
+  const step = Number(stepId);
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
   const [healthOpen, setHealthOpen] = useState(true);
@@ -151,16 +154,17 @@ export default function App() {
       setError("Map all required fields to continue.");
       return;
     }
-    setStep((s) => Math.min(3, s + 1));
+    const nextStep = Math.min(3, step + 1);
+    navigate(`/step/${nextStep}`);
   }
 
   function back() {
     setError("");
-    setStep((s) => Math.max(1, s - 1));
+    const nextStep = Math.max(1, step - 1);
+    navigate(`/step/${nextStep}`);
   }
 
   function resetWorkflow() {
-    setStep(1);
     setError("");
     setBusyKey("");
     setDatasets({
@@ -176,6 +180,7 @@ export default function App() {
     setRangeMode("all");
     setCustomStart("");
     setCustomEnd("");
+    navigate("/step/1");
   }
 
   const activeRange = useMemo(() => {
@@ -370,6 +375,22 @@ export default function App() {
     return { agency, byAgent, agents, agentName, agentFunnel };
   }, [step, canAnalyze, normalizedAll, activeRange, selectedAgent]);
 
+  useEffect(() => {
+    if (step === 2 && !allUploaded) {
+      setError("Upload all three CSV files to continue.");
+      navigate("/step/1", { replace: true });
+      return;
+    }
+    if (step === 3 && !canAnalyze) {
+      setError("Map all required fields to continue.");
+      navigate("/step/2", { replace: true });
+    }
+  }, [step, allUploaded, canAnalyze, navigate]);
+
+  if (![1, 2, 3].includes(step)) {
+    return <Navigate to="/step/1" replace />;
+  }
+
   return (
     <div>
       <TopBar />
@@ -442,5 +463,15 @@ export default function App() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/step/1" replace />} />
+      <Route path="/step/:stepId" element={<StepWorkflow />} />
+      <Route path="*" element={<Navigate to="/step/1" replace />} />
+    </Routes>
   );
 }
