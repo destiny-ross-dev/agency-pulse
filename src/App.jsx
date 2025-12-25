@@ -20,6 +20,7 @@ import { computeAgentMetrics } from "./lib/agentMetrics";
 import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
 import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
 import { clampNum } from "./lib/formatHelpers";
+import { computeIssuedPremiumSeries } from "./lib/issuedPremiumSeries";
 
 import Stepper from "./components/common/Stepper";
 import TopBar from "./components/layout/TopBar";
@@ -329,6 +330,20 @@ function StepWorkflow({ step }) {
     return computeAgentMetrics({ activityRows, quoteSalesRows });
   }, [step, canAnalyze, normalizedAll, activeRange]);
 
+  const issuedPremiumSeries = useMemo(() => {
+    if (step !== 3) return { buckets: [], agents: [], granularity: "month" };
+    if (!canAnalyze || !normalizedAll)
+      return { buckets: [], agents: [], granularity: "month" };
+
+    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
+
+    return computeIssuedPremiumSeries({
+      quoteSalesRows,
+      rangeMode,
+      activeRange,
+    });
+  }, [step, canAnalyze, normalizedAll, activeRange, rangeMode]);
+
   const rangeLabel = useMemo(() => {
     if (rangeMode === "all") return "All Time";
     if (rangeMode === "7d") return "Last 7 days";
@@ -459,6 +474,7 @@ function StepWorkflow({ step }) {
             agentRows={agentRows}
             agentView={agentView}
             setAgentView={setAgentView}
+            issuedPremiumSeries={issuedPremiumSeries}
             rangeMode={rangeMode}
             setRangeMode={setRangeMode}
             customStart={customStart}

@@ -5,6 +5,7 @@ import { PulseIcon } from "../../components/common/icons";
 import DataHealthPanel from "../../components/health/DataHealthPanel";
 import GoalsPanel from "../../components/goals/GoalsPanel";
 import FunnelDiagnostics from "../../components/funnel/FunnelDiagnostics";
+import StackedAreaChart from "../../components/charts/StackedAreaChart";
 import { money, money2, pct, ratio } from "../../lib/formatHelpers";
 import { formatYMD } from "../../lib/dates";
 
@@ -20,6 +21,7 @@ export default function Dashboard({
   agentRows,
   agentView,
   setAgentView,
+  issuedPremiumSeries,
   rangeMode,
   setRangeMode,
   customStart,
@@ -184,6 +186,8 @@ export default function Dashboard({
             <div className="kpi-hint">Paid spend / Issued policies (MVP).</div>
           </div>
         </div>
+
+        <StackedAreaChart series={issuedPremiumSeries} />
 
         <div className="table-card">
           <div className="table-toolbar">
