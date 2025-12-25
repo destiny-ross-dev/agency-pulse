@@ -259,6 +259,23 @@ function StepWorkflow({ step }) {
     });
   }
 
+  function getQuoteSalesDate(row) {
+    const status = String(row?.status || "").trim().toLowerCase();
+    if (status === "issued") {
+      return row?.date_issued || row?.date;
+    }
+    return row?.date;
+  }
+
+  function filterQuoteSalesByRange(rows) {
+    if (!activeRange) return rows;
+    const { start, end } = activeRange;
+    return rows.filter((row) => {
+      const d = parseDateLoose(getQuoteSalesDate(row));
+      return inRange(d, start, end);
+    });
+  }
+
   const normalizedAll = useMemo(() => {
     if (!canAnalyze) return null;
 
@@ -295,52 +312,50 @@ function StepWorkflow({ step }) {
     return { activityAll, quoteSalesAll, paidLeadsAll };
   }, [canAnalyze, datasets, mappings]);
 
+  const filteredRows = useMemo(() => {
+    if (!canAnalyze || !normalizedAll) return null;
+
+    return {
+      activityRows: filterByRange(normalizedAll.activityAll, "date"),
+      quoteSalesRows: filterQuoteSalesByRange(normalizedAll.quoteSalesAll),
+      paidLeadRows: filterByRange(normalizedAll.paidLeadsAll, "date"),
+    };
+  }, [canAnalyze, normalizedAll, activeRange]);
+
   const metrics = useMemo(() => {
     if (step !== 3) return null;
-    if (!canAnalyze || !normalizedAll) return null;
+    if (!filteredRows) return null;
 
-    const activityRows = filterByRange(normalizedAll.activityAll, "date");
-    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
-    const paidLeadRows = filterByRange(normalizedAll.paidLeadsAll, "date");
-
-    return computeCoreMetrics({ activityRows, quoteSalesRows, paidLeadRows });
-  }, [step, canAnalyze, normalizedAll, activeRange]);
+    return computeCoreMetrics(filteredRows);
+  }, [step, filteredRows]);
 
   const health = useMemo(() => {
-    if (!canAnalyze || !normalizedAll) return null;
+    if (!filteredRows) return null;
 
-    const activityRows = filterByRange(normalizedAll.activityAll, "date");
-    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
-    const paidLeadRows = filterByRange(normalizedAll.paidLeadsAll, "date");
-
-    return computeDataHealth({
-      activityRows,
-      quoteSalesRows,
-      paidLeadRows,
-    });
-  }, [canAnalyze, normalizedAll, activeRange]);
+    return computeDataHealth(filteredRows);
+  }, [filteredRows]);
 
   const agentRows = useMemo(() => {
     if (step !== 3) return [];
-    if (!canAnalyze || !normalizedAll) return [];
+    if (!filteredRows) return [];
 
-    const activityRows = filterByRange(normalizedAll.activityAll, "date");
-    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
-
-    return computeAgentMetrics({ activityRows, quoteSalesRows });
-  }, [step, canAnalyze, normalizedAll, activeRange]);
+    return computeAgentMetrics({
+      activityRows: filteredRows.activityRows,
+      quoteSalesRows: filteredRows.quoteSalesRows,
+    });
+  }, [step, filteredRows]);
 
   const issuedPremiumSeries = useMemo(() => {
     if (step !== 3) return { buckets: [], agents: [], granularity: "month" };
-    if (!canAnalyze || !normalizedAll)
+    if (!filteredRows)
       return { buckets: [], agents: [], granularity: "month" };
 
     return computeIssuedPremiumSeries({
-      quoteSalesRows: normalizedAll.quoteSalesAll,
+      quoteSalesRows: filteredRows.quoteSalesRows,
       rangeMode,
       activeRange,
     });
-  }, [step, canAnalyze, normalizedAll, activeRange, rangeMode]);
+  }, [step, filteredRows, activeRange, rangeMode]);
 
   const rangeLabel = useMemo(() => {
     if (rangeMode === "all") return "All Time";
@@ -358,12 +373,12 @@ function StepWorkflow({ step }) {
 
   const roiRows = useMemo(() => {
     if (step !== 3) return [];
-    if (!canAnalyze || !normalizedAll) return [];
+    if (!filteredRows) return [];
 
-    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
-    const paidLeadRows = filterByRange(normalizedAll.paidLeadsAll, "date");
-
-    let rows = computeLeadSourceROI({ quoteSalesRows, paidLeadRows });
+    let rows = computeLeadSourceROI({
+      quoteSalesRows: filteredRows.quoteSalesRows,
+      paidLeadRows: filteredRows.paidLeadRows,
+    });
 
     if (roiScope === "paid") {
       rows = rows.filter((r) => (r.leads || 0) > 0 || (r.spend || 0) > 0);
@@ -386,17 +401,20 @@ function StepWorkflow({ step }) {
       const bb = b.premiumPerSpend === 0 ? -1 : b.premiumPerSpend;
       return bb - aa;
     });
-  }, [step, canAnalyze, normalizedAll, activeRange, roiSort, roiScope]);
+  }, [step, filteredRows, roiSort, roiScope]);
 
   const funnelData = useMemo(() => {
     if (step !== 3) return null;
-    if (!canAnalyze || !normalizedAll) return null;
+    if (!filteredRows) return null;
 
-    const activityRows = filterByRange(normalizedAll.activityAll, "date");
-    const quoteSalesRows = filterByRange(normalizedAll.quoteSalesAll, "date");
-
-    const agency = computeFunnel({ activityRows, quoteSalesRows });
-    const byAgent = computeFunnelByAgent({ activityRows, quoteSalesRows });
+    const agency = computeFunnel({
+      activityRows: filteredRows.activityRows,
+      quoteSalesRows: filteredRows.quoteSalesRows,
+    });
+    const byAgent = computeFunnelByAgent({
+      activityRows: filteredRows.activityRows,
+      quoteSalesRows: filteredRows.quoteSalesRows,
+    });
 
     const agents = Array.from(byAgent.keys()).sort((a, b) =>
       a.localeCompare(b)
@@ -409,7 +427,7 @@ function StepWorkflow({ step }) {
     const agentFunnel = agentName ? byAgent.get(agentName) : null;
 
     return { agency, byAgent, agents, agentName, agentFunnel };
-  }, [step, canAnalyze, normalizedAll, activeRange, selectedAgent]);
+  }, [step, filteredRows, selectedAgent]);
 
   useEffect(() => {
     if (step === 2 && !allUploaded) {
