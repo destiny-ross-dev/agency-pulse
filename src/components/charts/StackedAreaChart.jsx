@@ -35,14 +35,7 @@ export default function StackedAreaChart({ series, height = 240 }) {
   const buckets = series?.buckets || [];
   const agents = series?.agents || [];
   const [tooltip, setTooltip] = useState(null);
-
-  if (buckets.length === 0 || agents.length === 0) {
-    return (
-      <div className="chart-empty">
-        No issued premium data available for this date range.
-      </div>
-    );
-  }
+  const isEmpty = buckets.length === 0 || agents.length === 0;
 
   const width = 720;
   const padding = { top: 16, right: 18, bottom: 40, left: 56 };
@@ -76,6 +69,14 @@ export default function StackedAreaChart({ series, height = 240 }) {
       });
     });
   }, [agents, buckets]);
+
+  if (isEmpty) {
+    return (
+      <div className="chart-empty">
+        No issued premium data available for this date range.
+      </div>
+    );
+  }
 
   for (let i = 0; i < bucketCount; i += 1) {
     let offset = 0;
