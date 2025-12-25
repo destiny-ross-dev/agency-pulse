@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -81,7 +81,10 @@ export default function StackedAreaChart({ series, height = 240 }) {
       </div>
       <div className="stacked-area-canvas">
         <ResponsiveContainer width="100%" height={height}>
-          <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 12 }}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 8, right: 16, left: 0, bottom: 12 }}
+          >
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 6" />
             <XAxis
               dataKey="label"
@@ -100,19 +103,16 @@ export default function StackedAreaChart({ series, height = 240 }) {
               shared={false}
             />
             {agents.map((agent, index) => (
-              <Area
+              <Bar
                 key={agent}
-                type="monotone"
                 dataKey={agent}
                 name={agent}
                 stackId="issued"
-                stroke={COLORS[index % COLORS.length]}
                 fill={COLORS[index % COLORS.length]}
-                fillOpacity={0.75}
                 isAnimationActive={false}
               />
             ))}
-          </AreaChart>
+          </BarChart>
         </ResponsiveContainer>
       </div>
       <div className="stacked-area-legend">
