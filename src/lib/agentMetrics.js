@@ -115,3 +115,77 @@ export function computeAgentMetrics({
 
   return agents;
 }
+
+function percentile(values, pct) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.round((pct / 100) * (sorted.length - 1));
+  return sorted[idx];
+}
+
+export function computeAgentInsights({
+  activityRows = [],
+  quoteSalesRows = [],
+}) {
+  const agents = computeAgentMetrics({ activityRows, quoteSalesRows });
+
+  const conversionRates = agents.map((agent) => agent.conversionRate || 0);
+  const dialVolumes = agents.map((agent) => agent.dials || 0);
+  const quoteVolumes = agents.map((agent) => agent.quotes || 0);
+  const issuedVolumes = agents.map((agent) => agent.issued || 0);
+  const issueRates = agents.map((agent) =>
+    agent.quotes > 0 ? agent.issued / agent.quotes : 0
+  );
+
+  const thresholds = {
+    highConversion: percentile(conversionRates, 75),
+    lowVolume: percentile(dialVolumes, 25),
+    highQuotes: percentile(quoteVolumes, 75),
+    lowIssued: percentile(issuedVolumes, 25),
+    lowIssueRate: percentile(issueRates, 25),
+  };
+
+  const byAgent = agents.reduce((acc, agent) => {
+    const flags = [];
+    const issueRate = agent.quotes > 0 ? agent.issued / agent.quotes : 0;
+
+    if (
+      agent.conversionRate >= thresholds.highConversion &&
+      agent.dials <= thresholds.lowVolume
+    ) {
+      flags.push({
+        key: "high-conversion-low-volume",
+        label: "High conversion, low volume",
+        detail: "Strong close rate on limited outreach.",
+      });
+    }
+
+    if (
+      agent.quotes >= thresholds.highQuotes &&
+      (agent.issued <= thresholds.lowIssued || issueRate <= thresholds.lowIssueRate)
+    ) {
+      flags.push({
+        key: "high-quotes-low-issuance",
+        label: "High quotes, low issuance",
+        detail: "Quoting volume is strong, issued count trails.",
+      });
+    }
+
+    acc[agent.agent] = {
+      kpis: {
+        dials: agent.dials,
+        contacts: agent.contacts,
+        quotes: agent.quotes,
+        issued: agent.issued,
+        conversionRate: agent.conversionRate,
+        contactRate: agent.contactRate,
+        issuedPremium: agent.issuedPremium,
+      },
+      flags,
+    };
+
+    return acc;
+  }, {});
+
+  return { byAgent, thresholds };
+}

@@ -4,7 +4,7 @@ import { SCHEMAS } from "../lib/schemas";
 import { normalizeRows } from "../lib/normalize";
 import { computeCoreMetrics } from "../lib/kpis";
 import { computeDataHealth } from "../lib/dataHealth";
-import { computeAgentMetrics } from "../lib/agentMetrics";
+import { computeAgentInsights, computeAgentMetrics } from "../lib/agentMetrics";
 import { computeIssuedPremiumSeries } from "../lib/issuedPremiumSeries";
 import {
   endOfDay,
@@ -212,6 +212,15 @@ export function WorkflowDataProvider({ children }) {
     });
   }, [filteredRows]);
 
+  const agentInsights = useMemo(() => {
+    if (!filteredRows) return { byAgent: {}, thresholds: {} };
+
+    return computeAgentInsights({
+      activityRows: filteredRows.activityRows,
+      quoteSalesRows: filteredRows.quoteSalesRows,
+    });
+  }, [filteredRows]);
+
   const issuedPremiumSeries = useMemo(() => {
     if (!filteredRows) return { buckets: [], agents: [], granularity: "month" };
 
@@ -272,6 +281,7 @@ export function WorkflowDataProvider({ children }) {
     metrics,
     health,
     agentRows,
+    agentInsights,
     issuedPremiumSeries,
     rangeLabel,
     resetWorkflowData,

@@ -343,6 +343,11 @@ function StepWorkflow({ step }) {
   );
 }
 
+function AgentsRoute() {
+  const { agentInsights } = useWorkflowData();
+  return <Agents agentInsights={agentInsights} />;
+}
+
 export default function App() {
   return (
     <WorkflowDataProvider>
@@ -352,7 +357,7 @@ export default function App() {
         <Route path="/import-data" element={<StepWorkflow step={1} />} />
         <Route path="/map-columns" element={<StepWorkflow step={2} />} />
         <Route path="/dashboard" element={<StepWorkflow step={3} />} />
-        <Route path="/agents" element={<Agents />} />
+        <Route path="/agents" element={<AgentsRoute />} />
         <Route path="*" element={<Navigate to={stepPaths[1]} replace />} />
       </Routes>
     </WorkflowDataProvider>

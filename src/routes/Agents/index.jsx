@@ -8,10 +8,11 @@ import PageHeader from "../../components/layout/PageHeader";
 import { useWorkflowData } from "../../context/WorkflowData";
 import { money, pct } from "../../lib/formatHelpers";
 
-export default function Agents() {
+export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
   const { canAnalyze, filteredRows, agentRows, rangeLabel } =
     useWorkflowData();
+  const insightsByAgent = agentInsights?.byAgent || {};
 
   const totals = filteredRows
     ? {
@@ -111,8 +112,10 @@ export default function Agents() {
                 </thead>
 
                 <tbody>
-                  {agentRows.map((agent) => (
-                    <tr key={agent.agent}>
+                  {agentRows.map((agent) => {
+                    const insightFlags = insightsByAgent[agent.agent]?.flags || [];
+                    return (
+                    <tr key={agent.agent} data-insights={insightFlags.length}>
                       <td style={{ fontWeight: 900 }}>{agent.agent}</td>
 
                       {agentView === "totals" ? (
@@ -144,7 +147,7 @@ export default function Agents() {
                         </>
                       )}
                     </tr>
-                  ))}
+                  )})}
 
                   {agentRows.length === 0 ? (
                     <tr>
