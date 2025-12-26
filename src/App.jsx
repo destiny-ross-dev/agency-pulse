@@ -1,26 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
-import { SCHEMAS } from "./lib/schemas";
 import { parseCsvFile, parseCsvText } from "./lib/csv";
+import { SCHEMAS } from "./lib/schemas";
 import { suggestMapping } from "./lib/mapping";
-import { normalizeRows } from "./lib/normalize";
-import { computeCoreMetrics } from "./lib/kpis";
-import {
-  endOfDay,
-  findCoverage,
-  inRange,
-  makePresetRange,
-  parseDateLoose,
-  startOfDay,
-  toInputDate,
-} from "./lib/dates";
-import { computeDataHealth } from "./lib/dataHealth";
-import { computeAgentMetrics } from "./lib/agentMetrics";
 import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
 import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
 import { clampNum } from "./lib/formatHelpers";
-import { computeIssuedPremiumSeries } from "./lib/issuedPremiumSeries";
 
 import Stepper from "./components/common/Stepper";
 import TopBar from "./components/layout/TopBar";
@@ -28,6 +14,8 @@ import PageHeader from "./components/layout/PageHeader";
 import DataImport from "./routes/DataImport";
 import MapColumns from "./routes/MapColumns";
 import Dashboard from "./routes/Dashboard";
+import Agents from "./routes/Agents";
+import { WorkflowDataProvider, useWorkflowData } from "./context/WorkflowData";
 
 const stepPaths = {
   1: "/import-data",
@@ -70,6 +58,29 @@ function StepWorkflow({ step }) {
     issueRateTargetPct: 35,
   });
 
+  const {
+    datasets,
+    setDatasets,
+    mappings,
+    setMappings,
+    allUploaded,
+    canAnalyze,
+    rangeMode,
+    setRangeMode,
+    customStart,
+    setCustomStart,
+    customEnd,
+    setCustomEnd,
+    coverage,
+    filteredRows,
+    metrics,
+    health,
+    agentRows,
+    issuedPremiumSeries,
+    rangeLabel,
+    resetWorkflowData,
+  } = useWorkflowData();
+
   function updateGoal(key, raw) {
     const next = clampNum(raw, 0, 100);
     setKpiGoals?.((prev) => ({ ...(prev || kpiGoals), [key]: next }));
@@ -94,40 +105,6 @@ function StepWorkflow({ step }) {
       // ignore
     }
   }, [kpiGoals]);
-
-  const [datasets, setDatasets] = useState({
-    activity: null,
-    quotesSales: null,
-    paidLeads: null,
-  });
-
-  const [mappings, setMappings] = useState({
-    activity: {},
-    quotesSales: {},
-    paidLeads: {},
-  });
-
-  const [rangeMode, setRangeMode] = useState("all");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
-
-  const allUploaded = Boolean(
-    datasets.activity && datasets.quotesSales && datasets.paidLeads
-  );
-
-  const validation = useMemo(() => {
-    const out = {};
-    for (const key of Object.keys(SCHEMAS)) {
-      const ds = datasets[key];
-      const req = SCHEMAS[key].requiredFields;
-      const map = mappings[key] || {};
-      const missing = req.filter((f) => !map[f.key]);
-      out[key] = { ok: Boolean(ds) && missing.length === 0, missing };
-    }
-    return out;
-  }, [datasets, mappings]);
-
-  const canAnalyze = Object.values(validation).every((v) => v.ok);
 
   async function handlePickFile(datasetKey) {
     setError("");
@@ -215,204 +192,9 @@ function StepWorkflow({ step }) {
   function resetWorkflow() {
     setError("");
     setBusyKey("");
-    setDatasets({
-      activity: null,
-      quotesSales: null,
-      paidLeads: null,
-    });
-    setMappings({
-      activity: {},
-      quotesSales: {},
-      paidLeads: {},
-    });
-    setRangeMode("all");
-    setCustomStart("");
-    setCustomEnd("");
+    resetWorkflowData();
     navigate(stepPaths[1]);
   }
-
-  const activeRange = useMemo(() => {
-    if (rangeMode === "custom") {
-      const s = customStart ? startOfDay(new Date(customStart)) : null;
-      const e = customEnd ? endOfDay(new Date(customEnd)) : null;
-      if (s && e) return { start: s, end: e };
-      return null;
-    }
-    return makePresetRange(rangeMode);
-  }, [rangeMode, customStart, customEnd]);
-
-  const coverage = useMemo(() => {
-    if (!canAnalyze) return null;
-
-    const activityAll = normalizeRows(
-      datasets.activity.rows,
-      mappings.activity,
-      {
-        numericKeys: [
-          "dials_made",
-          "contacts_made",
-          "households_quoted",
-          "total_quotes",
-          "total_sales",
-        ],
-      }
-    );
-
-    const quoteSalesAll = normalizeRows(
-      datasets.quotesSales.rows,
-      mappings.quotesSales,
-      {
-        numericKeys: ["written_premium", "issued_premium"],
-      }
-    );
-
-    const paidLeadsAll = normalizeRows(
-      datasets.paidLeads.rows,
-      mappings.paidLeads,
-      {
-        numericKeys: ["lead_count", "lead_cost"],
-      }
-    );
-
-    const c1 = findCoverage(activityAll, "date");
-    const c2 = findCoverage(quoteSalesAll, "date");
-    const c3 = findCoverage(paidLeadsAll, "date");
-
-    const coverages = [c1, c2, c3].filter(Boolean);
-    if (coverages.length === 0) return null;
-
-    let min = coverages[0].start;
-    let max = coverages[0].end;
-
-    for (const c of coverages.slice(1)) {
-      if (c.start.getTime() < min.getTime()) min = c.start;
-      if (c.end.getTime() > max.getTime()) max = c.end;
-    }
-
-    return { start: min, end: max };
-  }, [canAnalyze, datasets, mappings]);
-
-  function filterByRange(rows, dateKey = "date") {
-    if (!activeRange) return rows;
-    const { start, end } = activeRange;
-    return rows.filter((r) => {
-      const d = parseDateLoose(r?.[dateKey]);
-      return inRange(d, start, end);
-    });
-  }
-
-  function getQuoteSalesDate(row) {
-    const status = String(row?.status || "")
-      .trim()
-      .toLowerCase();
-    if (status === "issued") {
-      return row?.date_issued || row?.date;
-    }
-    return row?.date;
-  }
-
-  function filterQuoteSalesByRange(rows) {
-    if (!activeRange) return rows;
-    const { start, end } = activeRange;
-    return rows.filter((row) => {
-      const d = parseDateLoose(getQuoteSalesDate(row));
-      return inRange(d, start, end);
-    });
-  }
-
-  const normalizedAll = useMemo(() => {
-    if (!canAnalyze) return null;
-
-    const activityAll = normalizeRows(
-      datasets.activity.rows,
-      mappings.activity,
-      {
-        numericKeys: [
-          "dials_made",
-          "contacts_made",
-          "households_quoted",
-          "total_quotes",
-          "total_sales",
-        ],
-      }
-    );
-
-    const quoteSalesAll = normalizeRows(
-      datasets.quotesSales.rows,
-      mappings.quotesSales,
-      {
-        numericKeys: ["written_premium", "issued_premium"],
-      }
-    );
-
-    const paidLeadsAll = normalizeRows(
-      datasets.paidLeads.rows,
-      mappings.paidLeads,
-      {
-        numericKeys: ["lead_count", "lead_cost"],
-      }
-    );
-
-    return { activityAll, quoteSalesAll, paidLeadsAll };
-  }, [canAnalyze, datasets, mappings]);
-
-  const filteredRows = useMemo(() => {
-    if (!canAnalyze || !normalizedAll) return null;
-
-    return {
-      activityRows: filterByRange(normalizedAll.activityAll, "date"),
-      quoteSalesRows: filterQuoteSalesByRange(normalizedAll.quoteSalesAll),
-      paidLeadRows: filterByRange(normalizedAll.paidLeadsAll, "date"),
-    };
-  }, [canAnalyze, normalizedAll, activeRange]);
-
-  const metrics = useMemo(() => {
-    if (step !== 3) return null;
-    if (!filteredRows) return null;
-
-    return computeCoreMetrics(filteredRows);
-  }, [step, filteredRows]);
-
-  const health = useMemo(() => {
-    if (!filteredRows) return null;
-
-    return computeDataHealth(filteredRows);
-  }, [filteredRows]);
-
-  const agentRows = useMemo(() => {
-    if (step !== 3) return [];
-    if (!filteredRows) return [];
-
-    return computeAgentMetrics({
-      activityRows: filteredRows.activityRows,
-      quoteSalesRows: filteredRows.quoteSalesRows,
-    });
-  }, [step, filteredRows]);
-
-  const issuedPremiumSeries = useMemo(() => {
-    if (step !== 3) return { buckets: [], agents: [], granularity: "month" };
-    if (!filteredRows) return { buckets: [], agents: [], granularity: "month" };
-
-    return computeIssuedPremiumSeries({
-      quoteSalesRows: filteredRows.quoteSalesRows,
-      rangeMode,
-      activeRange,
-    });
-  }, [step, filteredRows, activeRange, rangeMode]);
-
-  const rangeLabel = useMemo(() => {
-    if (rangeMode === "all") return "All Time";
-    if (rangeMode === "7d") return "Last 7 days";
-    if (rangeMode === "30d") return "Last 30 days";
-    if (rangeMode === "90d") return "Last 90 days";
-    if (rangeMode === "365d") return "Last year";
-    if (rangeMode === "custom" && activeRange)
-      return `${toInputDate(activeRange.start)} → ${toInputDate(
-        activeRange.end
-      )}`;
-    if (rangeMode === "custom") return "Custom";
-    return "All Time";
-  }, [rangeMode, activeRange]);
 
   const roiRows = useMemo(() => {
     if (step !== 3) return [];
@@ -486,8 +268,6 @@ function StepWorkflow({ step }) {
 
   return (
     <div>
-      <TopBar />
-
       <div className="container">
         <PageHeader
           title="Performance Overview"
@@ -565,12 +345,16 @@ function StepWorkflow({ step }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to={stepPaths[1]} replace />} />
-      <Route path="/import-data" element={<StepWorkflow step={1} />} />
-      <Route path="/map-columns" element={<StepWorkflow step={2} />} />
-      <Route path="/dashboard" element={<StepWorkflow step={3} />} />
-      <Route path="*" element={<Navigate to={stepPaths[1]} replace />} />
-    </Routes>
+    <WorkflowDataProvider>
+      <TopBar />
+      <Routes>
+        <Route path="/" element={<Navigate to={stepPaths[1]} replace />} />
+        <Route path="/import-data" element={<StepWorkflow step={1} />} />
+        <Route path="/map-columns" element={<StepWorkflow step={2} />} />
+        <Route path="/dashboard" element={<StepWorkflow step={3} />} />
+        <Route path="/agents" element={<Agents />} />
+        <Route path="*" element={<Navigate to={stepPaths[1]} replace />} />
+      </Routes>
+    </WorkflowDataProvider>
   );
 }
