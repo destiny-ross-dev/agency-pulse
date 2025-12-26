@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 
 import Card from "../../components/common/Card";
 import SectionTitle from "../../components/common/SectionTitle";
-import { PulseIcon } from "../../components/common/icons";
+import {
+  LightbulbIcon,
+  PersonIcon,
+  PulseIcon,
+  QuotesIcon,
+  SalesIcon,
+} from "../../components/common/icons";
 import PageHeader from "../../components/layout/PageHeader";
 import { useWorkflowData } from "../../context/WorkflowData";
 import { formatYMD, parseDateLoose } from "../../lib/dates";
@@ -238,6 +244,7 @@ export default function Agents({ agentInsights }) {
 
           <div style={{ marginTop: 24 }}>
             <SectionTitle
+              icon={<PersonIcon />}
               title={
                 selectedAgent
                   ? `Agent Details: ${selectedAgent}`
@@ -252,33 +259,6 @@ export default function Agents({ agentInsights }) {
               </div>
             ) : (
               <>
-                <div
-                  className="table-toolbar"
-                  style={{ marginTop: 12, alignItems: "center" }}
-                >
-                  <div className="toolbar-left">
-                    <div style={{ fontWeight: 700 }}>Agent selector</div>
-                    <select
-                      className="input"
-                      style={{ minWidth: 220 }}
-                      value={selectedAgent}
-                      onChange={(event) =>
-                        setSelectedAgent(event.target.value)
-                      }
-                    >
-                      {agentRows.map((agent) => (
-                        <option key={agent.agent} value={agent.agent}>
-                          {agent.agent}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <SectionTitle
-                  title="KPI Cards"
-                  subtitle="Snapshot of daily activity and conversion efficiency."
-                />
                 <div className="kpi-grid" style={{ marginTop: 12 }}>
                   <div className="kpi">
                     <div className="kpi-title">Dials</div>
@@ -335,6 +315,7 @@ export default function Agents({ agentInsights }) {
                 </div>
 
                 <SectionTitle
+                  icon={<LightbulbIcon />}
                   title="Insights"
                   subtitle="Summary of insight flags for the selected agent."
                 />
@@ -350,6 +331,7 @@ export default function Agents({ agentInsights }) {
                 </Card>
 
                 <SectionTitle
+                  icon={<QuotesIcon />}
                   title="Quotes"
                   subtitle="Quote activity for the selected agent."
                 />
@@ -376,7 +358,6 @@ export default function Agents({ agentInsights }) {
                           <th>Policy Type</th>
                           <th>Business Type</th>
                           <th className="right">Quoted Premium</th>
-                          <th className="right">Issued Premium</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -389,9 +370,6 @@ export default function Agents({ agentInsights }) {
                             <td>{row?.business_type || "—"}</td>
                             <td className="right">
                               {formatPremium(row?.written_premium)}
-                            </td>
-                            <td className="right">
-                              {formatPremium(row?.issued_premium)}
                             </td>
                           </tr>
                         ))}
@@ -415,6 +393,7 @@ export default function Agents({ agentInsights }) {
                 </div>
 
                 <SectionTitle
+                  icon={<SalesIcon />}
                   title="Issued Policies"
                   subtitle="Issued policies for the selected agent."
                 />
@@ -436,6 +415,7 @@ export default function Agents({ agentInsights }) {
                       <thead>
                         <tr>
                           <th>Date Quoted</th>
+                          <th>Date Issued</th>
                           <th>Policyholder</th>
                           <th>LOB</th>
                           <th>Policy Type</th>
@@ -445,21 +425,25 @@ export default function Agents({ agentInsights }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {issuedRows.map((row, index) => (
-                          <tr key={`${row?.agent_name}-issued-${index}`}>
-                            <td>{formatDate(row?.date)}</td>
-                            <td>{row?.policyholder || "—"}</td>
-                            <td>{row?.line_of_business || "—"}</td>
-                            <td>{row?.policy_type || "—"}</td>
-                            <td>{row?.business_type || "—"}</td>
-                            <td className="right">
-                              {formatPremium(row?.written_premium)}
-                            </td>
-                            <td className="right">
-                              {formatPremium(row?.issued_premium)}
-                            </td>
-                          </tr>
-                        ))}
+                        {issuedRows.map((row, index) => {
+                          console.log(row);
+                          return (
+                            <tr key={`${row?.agent_name}-issued-${index}`}>
+                              <td>{formatDate(row?.date)}</td>
+                              <td>{formatDate(row?.date_issued)}</td>
+                              <td>{row?.policyholder || "—"}</td>
+                              <td>{row?.line_of_business || "—"}</td>
+                              <td>{row?.policy_type || "—"}</td>
+                              <td>{row?.business_type || "—"}</td>
+                              <td className="right">
+                                {formatPremium(row?.written_premium)}
+                              </td>
+                              <td className="right">
+                                {formatPremium(row?.issued_premium)}
+                              </td>
+                            </tr>
+                          );
+                        })}
                         {issuedRows.length === 0 ? (
                           <tr>
                             <td
