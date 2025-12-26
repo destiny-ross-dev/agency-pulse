@@ -5,7 +5,7 @@ import { PulseIcon } from "../../components/common/icons";
 import DataHealthPanel from "../../components/health/DataHealthPanel";
 import GoalsPanel from "../../components/goals/GoalsPanel";
 import FunnelDiagnostics from "../../components/funnel/FunnelDiagnostics";
-import StackedAreaChart from "../../components/charts/StackedAreaChart";
+import AgencyKPIs from "../../components/kpis/AgencyKPIs";
 import { money, money2, pct, ratio } from "../../lib/formatHelpers";
 import { formatYMD } from "../../lib/dates";
 
@@ -152,43 +152,10 @@ export default function Dashboard({
           updateGoal={updateGoal}
         />
 
-        <div className="kpi-grid" style={{ marginTop: 14 }}>
-          <div className="kpi">
-            <div className="kpi-title">Total Issued Premium</div>
-            <div className="kpi-value">
-              {metrics ? money(metrics.totalIssuedPremium) : "—"}
-            </div>
-            <div className="kpi-hint">
-              Sum of Issued Premium where Status = Issued.
-            </div>
-          </div>
-
-          <div className="kpi">
-            <div className="kpi-title">Policies Issued</div>
-            <div className="kpi-value">
-              {metrics ? metrics.policiesIssued.toLocaleString() : "—"}
-            </div>
-            <div className="kpi-hint">Count of rows where Status = Issued.</div>
-          </div>
-
-          <div className="kpi">
-            <div className="kpi-title">Conversion Rate</div>
-            <div className="kpi-value">
-              {metrics ? pct(metrics.conversionRate) : "—"}
-            </div>
-            <div className="kpi-hint">Issued / (Quoted + Issued).</div>
-          </div>
-
-          <div className="kpi">
-            <div className="kpi-title">Cost Per Acquisition (CPA)</div>
-            <div className="kpi-value">
-              {metrics ? money(metrics.costPerAcquisition) : "—"}
-            </div>
-            <div className="kpi-hint">Paid spend / Issued policies (MVP).</div>
-          </div>
-        </div>
-
-        <StackedAreaChart series={issuedPremiumSeries} />
+        <AgencyKPIs
+          metrics={metrics}
+          issuedPremiumSeries={issuedPremiumSeries}
+        />
 
         <div className="table-card">
           <div className="table-toolbar">
