@@ -11,8 +11,7 @@ import { money, pct } from "../../lib/formatHelpers";
 export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
   const [selectedAgent, setSelectedAgent] = useState("");
-  const { canAnalyze, filteredRows, agentRows, rangeLabel } =
-    useWorkflowData();
+  const { canAnalyze, filteredRows, agentRows, rangeLabel } = useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
 
   const totals = filteredRows
@@ -103,7 +102,6 @@ export default function Agents({ agentInsights }) {
                       <th className="right">Contacts</th>
                       <th className="right">Contact Ratio</th>
                       <th className="right">Conversion</th>
-                      <th>Insights</th>
                     </tr>
                   ) : (
                     <tr>
@@ -119,7 +117,6 @@ export default function Agents({ agentInsights }) {
                         Contact Ratio
                       </th>
                       <th className="right">Avg Prem / Issued</th>
-                      <th>Insights</th>
                     </tr>
                   )}
                 </thead>
@@ -166,7 +163,9 @@ export default function Agents({ agentInsights }) {
                               {agent.contacts.toLocaleString()}
                             </td>
                             <td className="right">{pct(agent.contactRate)}</td>
-                            <td className="right">{pct(agent.conversionRate)}</td>
+                            <td className="right">
+                              {pct(agent.conversionRate)}
+                            </td>
                           </>
                         ) : (
                           <>
@@ -188,11 +187,6 @@ export default function Agents({ agentInsights }) {
                             </td>
                           </>
                         )}
-                        <td>
-                          <div className="small">
-                            {insightFlags.map((flag) => flag.label).join(", ")}
-                          </div>
-                        </td>
                       </tr>
                     );
                   })}
@@ -218,7 +212,11 @@ export default function Agents({ agentInsights }) {
 
           <div style={{ marginTop: 24 }}>
             <SectionTitle
-              title={selectedAgent ? `Agent Details: ${selectedAgent}` : "Agent Details"}
+              title={
+                selectedAgent
+                  ? `Agent Details: ${selectedAgent}`
+                  : "Agent Details"
+              }
               subtitle="Click an agent name to view their KPI breakdown and insights."
             />
 
@@ -233,13 +231,37 @@ export default function Agents({ agentInsights }) {
                     KPI Breakdown
                   </div>
                   <div className="small">
-                    <div>Dials: {selectedInsights?.kpis?.dials?.toLocaleString?.() || "0"}</div>
-                    <div>Contacts: {selectedInsights?.kpis?.contacts?.toLocaleString?.() || "0"}</div>
-                    <div>Quotes: {selectedInsights?.kpis?.quotes?.toLocaleString?.() || "0"}</div>
-                    <div>Issued: {selectedInsights?.kpis?.issued?.toLocaleString?.() || "0"}</div>
-                    <div>Contact Rate: {pct(selectedInsights?.kpis?.contactRate || 0)}</div>
-                    <div>Conversion Rate: {pct(selectedInsights?.kpis?.conversionRate || 0)}</div>
-                    <div>Issued Premium: {money(selectedInsights?.kpis?.issuedPremium || 0)}</div>
+                    <div>
+                      Dials:{" "}
+                      {selectedInsights?.kpis?.dials?.toLocaleString?.() || "0"}
+                    </div>
+                    <div>
+                      Contacts:{" "}
+                      {selectedInsights?.kpis?.contacts?.toLocaleString?.() ||
+                        "0"}
+                    </div>
+                    <div>
+                      Quotes:{" "}
+                      {selectedInsights?.kpis?.quotes?.toLocaleString?.() ||
+                        "0"}
+                    </div>
+                    <div>
+                      Issued:{" "}
+                      {selectedInsights?.kpis?.issued?.toLocaleString?.() ||
+                        "0"}
+                    </div>
+                    <div>
+                      Contact Rate:{" "}
+                      {pct(selectedInsights?.kpis?.contactRate || 0)}
+                    </div>
+                    <div>
+                      Conversion Rate:{" "}
+                      {pct(selectedInsights?.kpis?.conversionRate || 0)}
+                    </div>
+                    <div>
+                      Issued Premium:{" "}
+                      {money(selectedInsights?.kpis?.issuedPremium || 0)}
+                    </div>
                   </div>
                 </Card>
 
