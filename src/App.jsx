@@ -154,9 +154,7 @@ function StepWorkflow({ step }) {
         setMappings((prev) => ({ ...prev, [datasetKey]: suggested }));
       }
     } catch (err) {
-      setError(
-        err?.message || "Failed to load demo data. Please try again."
-      );
+      setError(err?.message || "Failed to load demo data. Please try again.");
     } finally {
       setBusyKey("");
     }
@@ -269,13 +267,6 @@ function StepWorkflow({ step }) {
   return (
     <div>
       <div className="container">
-        <PageHeader
-          title="Performance Overview"
-          subtitle="Upload your data, map columns, and generate sales insights for your agency."
-        />
-
-        <Stepper step={step} />
-
         {error ? <div className="alert">{error}</div> : null}
 
         {step === 1 ? (

@@ -65,11 +65,6 @@ export default function Agents({ agentInsights }) {
 
   return (
     <div className="container">
-      <PageHeader
-        title="Agent Performance"
-        subtitle="Review agent totals and efficiency using the same filtered data as the main dashboard."
-      />
-
       {!canAnalyze ? (
         <div className="alert">
           Upload and map your data first to unlock agent insights. Visit the{" "}

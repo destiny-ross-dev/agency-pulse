@@ -45,7 +45,7 @@ export default function Dashboard({
   onStartOver,
 }) {
   return (
-    <div style={{ marginTop: 18, display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: 16 }}>
       <Card pad>
         <SectionTitle
           icon={<PulseIcon />}
