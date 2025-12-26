@@ -38,6 +38,12 @@ export default function Agents({ agentInsights }) {
     return parsed ? formatYMD(parsed) : "—";
   }
 
+  function formatPremium(value) {
+    const premium = Number(value);
+    if (!Number.isFinite(premium) || premium === 0) return "—";
+    return money(premium);
+  }
+
   const selectedQuoteSalesRows = selectedAgent
     ? quoteSalesRows.filter(
         (row) => String(row?.agent_name || "").trim() === selectedAgent
@@ -347,82 +353,130 @@ export default function Agents({ agentInsights }) {
                   title="Quotes"
                   subtitle="Quote activity for the selected agent."
                 />
-                <div className="table-wrap" style={{ marginTop: 12 }}>
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Lead Source</th>
-                        <th className="right">Written Premium</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {quotedRows.map((row, index) => (
-                        <tr key={`${row?.agent_name}-quoted-${index}`}>
-                          <td>{formatDate(row?.date)}</td>
-                          <td>{row?.lead_source || "—"}</td>
-                          <td className="right">
-                            {money(row?.written_premium || 0)}
-                          </td>
-                        </tr>
-                      ))}
-                      {quotedRows.length === 0 ? (
+                <div className="table-card" style={{ marginTop: 12 }}>
+                  <div className="table-toolbar">
+                    <div className="toolbar-left">
+                      <div>
+                        <div className="toolbar-title">Quotes Log</div>
+                        <div className="small">
+                          {quotedRows.length.toLocaleString()} quotes in the
+                          selected range.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead>
                         <tr>
-                          <td
-                            colSpan={3}
-                            style={{
-                              padding: 14,
-                              color: "var(--muted)",
-                              fontWeight: 700,
-                            }}
-                          >
-                            No quoted policies for this agent.
-                          </td>
+                          <th>Date Quoted</th>
+                          <th>Policyholder</th>
+                          <th>LOB</th>
+                          <th>Policy Type</th>
+                          <th>Business Type</th>
+                          <th className="right">Quoted Premium</th>
+                          <th className="right">Issued Premium</th>
                         </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {quotedRows.map((row, index) => (
+                          <tr key={`${row?.agent_name}-quoted-${index}`}>
+                            <td>{formatDate(row?.date)}</td>
+                            <td>{row?.policyholder || "—"}</td>
+                            <td>{row?.line_of_business || "—"}</td>
+                            <td>{row?.policy_type || "—"}</td>
+                            <td>{row?.business_type || "—"}</td>
+                            <td className="right">
+                              {formatPremium(row?.written_premium)}
+                            </td>
+                            <td className="right">
+                              {formatPremium(row?.issued_premium)}
+                            </td>
+                          </tr>
+                        ))}
+                        {quotedRows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              style={{
+                                padding: 14,
+                                color: "var(--muted)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              No quoted policies for this agent.
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <SectionTitle
                   title="Issued Policies"
                   subtitle="Issued policies for the selected agent."
                 />
-                <div className="table-wrap" style={{ marginTop: 12 }}>
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Date Issued</th>
-                        <th>Lead Source</th>
-                        <th className="right">Issued Premium</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {issuedRows.map((row, index) => (
-                        <tr key={`${row?.agent_name}-issued-${index}`}>
-                          <td>{formatDate(row?.date_issued || row?.date)}</td>
-                          <td>{row?.lead_source || "—"}</td>
-                          <td className="right">
-                            {money(row?.issued_premium || 0)}
-                          </td>
-                        </tr>
-                      ))}
-                      {issuedRows.length === 0 ? (
+                <div className="table-card" style={{ marginTop: 12 }}>
+                  <div className="table-toolbar">
+                    <div className="toolbar-left">
+                      <div>
+                        <div className="toolbar-title">Issued Policies</div>
+                        <div className="small">
+                          {issuedRows.length.toLocaleString()} issued policies
+                          in the selected range.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead>
                         <tr>
-                          <td
-                            colSpan={3}
-                            style={{
-                              padding: 14,
-                              color: "var(--muted)",
-                              fontWeight: 700,
-                            }}
-                          >
-                            No issued policies for this agent.
-                          </td>
+                          <th>Date Quoted</th>
+                          <th>Policyholder</th>
+                          <th>LOB</th>
+                          <th>Policy Type</th>
+                          <th>Business Type</th>
+                          <th className="right">Quoted Premium</th>
+                          <th className="right">Issued Premium</th>
                         </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {issuedRows.map((row, index) => (
+                          <tr key={`${row?.agent_name}-issued-${index}`}>
+                            <td>{formatDate(row?.date)}</td>
+                            <td>{row?.policyholder || "—"}</td>
+                            <td>{row?.line_of_business || "—"}</td>
+                            <td>{row?.policy_type || "—"}</td>
+                            <td>{row?.business_type || "—"}</td>
+                            <td className="right">
+                              {formatPremium(row?.written_premium)}
+                            </td>
+                            <td className="right">
+                              {formatPremium(row?.issued_premium)}
+                            </td>
+                          </tr>
+                        ))}
+                        {issuedRows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              style={{
+                                padding: 14,
+                                color: "var(--muted)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              No issued policies for this agent.
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             )}
