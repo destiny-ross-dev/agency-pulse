@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import Card from "../../components/common/Card";
@@ -10,6 +10,7 @@ import { money, pct } from "../../lib/formatHelpers";
 
 export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
+  const [selectedAgent, setSelectedAgent] = useState("");
   const { canAnalyze, filteredRows, agentRows, rangeLabel } =
     useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
@@ -19,6 +20,16 @@ export default function Agents({ agentInsights }) {
         activity: filteredRows.activityRows.length,
         quoteSales: filteredRows.quoteSalesRows.length,
       }
+    : null;
+
+  useEffect(() => {
+    if (!selectedAgent && agentRows.length > 0) {
+      setSelectedAgent(agentRows[0].agent);
+    }
+  }, [agentRows, selectedAgent]);
+
+  const selectedInsights = selectedAgent
+    ? insightsByAgent[selectedAgent]
     : null;
 
   return (
@@ -92,6 +103,7 @@ export default function Agents({ agentInsights }) {
                       <th className="right">Contacts</th>
                       <th className="right">Contact Ratio</th>
                       <th className="right">Conversion</th>
+                      <th>Insights</th>
                     </tr>
                   ) : (
                     <tr>
@@ -107,52 +119,88 @@ export default function Agents({ agentInsights }) {
                         Contact Ratio
                       </th>
                       <th className="right">Avg Prem / Issued</th>
+                      <th>Insights</th>
                     </tr>
                   )}
                 </thead>
 
                 <tbody>
                   {agentRows.map((agent) => {
-                    const insightFlags = insightsByAgent[agent.agent]?.flags || [];
+                    const insightFlags =
+                      insightsByAgent[agent.agent]?.flags || [];
+                    const isSelected = agent.agent === selectedAgent;
                     return (
-                    <tr key={agent.agent} data-insights={insightFlags.length}>
-                      <td style={{ fontWeight: 900 }}>{agent.agent}</td>
+                      <tr key={agent.agent}>
+                        <td style={{ fontWeight: 900 }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAgent(agent.agent)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              padding: 0,
+                              cursor: "pointer",
+                              fontWeight: 900,
+                              color: isSelected ? "#1d4ed8" : "inherit",
+                            }}
+                          >
+                            {agent.agent}
+                          </button>
+                        </td>
 
-                      {agentView === "totals" ? (
-                        <>
-                          <td className="right">{money(agent.issuedPremium)}</td>
-                          <td className="right">{agent.issued.toLocaleString()}</td>
-                          <td className="right">{agent.quotes.toLocaleString()}</td>
-                          <td className="right">{agent.dials.toLocaleString()}</td>
-                          <td className="right">{agent.contacts.toLocaleString()}</td>
-                          <td className="right">{pct(agent.contactRate)}</td>
-                          <td className="right">{pct(agent.conversionRate)}</td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="right">
-                            {agent.issuedPer100Dials.toFixed(1)}
-                          </td>
-                          <td className="right">
-                            {agent.quotesPer100Dials.toFixed(1)}
-                          </td>
-                          <td className="right">{money(agent.issuedPremPerDial)}</td>
-                          <td className="right">
-                            {money(agent.issuedPremPerContact)}
-                          </td>
-                          <td className="right">{pct(agent.contactRate)}</td>
-                          <td className="right">
-                            {money(agent.issuedPremPerIssued)}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  )})}
+                        {agentView === "totals" ? (
+                          <>
+                            <td className="right">
+                              {money(agent.issuedPremium)}
+                            </td>
+                            <td className="right">
+                              {agent.issued.toLocaleString()}
+                            </td>
+                            <td className="right">
+                              {agent.quotes.toLocaleString()}
+                            </td>
+                            <td className="right">
+                              {agent.dials.toLocaleString()}
+                            </td>
+                            <td className="right">
+                              {agent.contacts.toLocaleString()}
+                            </td>
+                            <td className="right">{pct(agent.contactRate)}</td>
+                            <td className="right">{pct(agent.conversionRate)}</td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="right">
+                              {agent.issuedPer100Dials.toFixed(1)}
+                            </td>
+                            <td className="right">
+                              {agent.quotesPer100Dials.toFixed(1)}
+                            </td>
+                            <td className="right">
+                              {money(agent.issuedPremPerDial)}
+                            </td>
+                            <td className="right">
+                              {money(agent.issuedPremPerContact)}
+                            </td>
+                            <td className="right">{pct(agent.contactRate)}</td>
+                            <td className="right">
+                              {money(agent.issuedPremPerIssued)}
+                            </td>
+                          </>
+                        )}
+                        <td>
+                          <div className="small">
+                            {insightFlags.map((flag) => flag.label).join(", ")}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                   {agentRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         style={{
                           padding: 14,
                           color: "var(--muted)",
@@ -166,6 +214,50 @@ export default function Agents({ agentInsights }) {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div style={{ marginTop: 24 }}>
+            <SectionTitle
+              title={selectedAgent ? `Agent Details: ${selectedAgent}` : "Agent Details"}
+              subtitle="Click an agent name to view their KPI breakdown and insights."
+            />
+
+            {!selectedAgent ? (
+              <div className="small" style={{ marginTop: 8 }}>
+                Select an agent to view insights.
+              </div>
+            ) : (
+              <div className="grid-2" style={{ gap: 16, marginTop: 12 }}>
+                <Card pad>
+                  <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                    KPI Breakdown
+                  </div>
+                  <div className="small">
+                    <div>Dials: {selectedInsights?.kpis?.dials?.toLocaleString?.() || "0"}</div>
+                    <div>Contacts: {selectedInsights?.kpis?.contacts?.toLocaleString?.() || "0"}</div>
+                    <div>Quotes: {selectedInsights?.kpis?.quotes?.toLocaleString?.() || "0"}</div>
+                    <div>Issued: {selectedInsights?.kpis?.issued?.toLocaleString?.() || "0"}</div>
+                    <div>Contact Rate: {pct(selectedInsights?.kpis?.contactRate || 0)}</div>
+                    <div>Conversion Rate: {pct(selectedInsights?.kpis?.conversionRate || 0)}</div>
+                    <div>Issued Premium: {money(selectedInsights?.kpis?.issuedPremium || 0)}</div>
+                  </div>
+                </Card>
+
+                <Card pad>
+                  <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                    Insights
+                  </div>
+                  <div className="small">
+                    {(selectedInsights?.flags || []).map((flag) => (
+                      <div key={flag.key} style={{ marginBottom: 8 }}>
+                        <div style={{ fontWeight: 700 }}>{flag.label}</div>
+                        <div>{flag.detail}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
         </Card>
       )}
