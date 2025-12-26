@@ -6,6 +6,7 @@ import SectionTitle from "../../components/common/SectionTitle";
 import { PulseIcon } from "../../components/common/icons";
 import PageHeader from "../../components/layout/PageHeader";
 import { useWorkflowData } from "../../context/WorkflowData";
+import { formatYMD, parseDateLoose } from "../../lib/dates";
 import { money, pct } from "../../lib/formatHelpers";
 
 export default function Agents({ agentInsights }) {
@@ -30,6 +31,31 @@ export default function Agents({ agentInsights }) {
   const selectedInsights = selectedAgent
     ? insightsByAgent[selectedAgent]
     : null;
+  const quoteSalesRows = filteredRows?.quoteSalesRows || [];
+
+  function formatDate(value) {
+    const parsed = parseDateLoose(value);
+    return parsed ? formatYMD(parsed) : "—";
+  }
+
+  function formatPremium(value) {
+    const premium = Number(value);
+    if (!Number.isFinite(premium) || premium === 0) return "—";
+    return money(premium);
+  }
+
+  const selectedQuoteSalesRows = selectedAgent
+    ? quoteSalesRows.filter(
+        (row) => String(row?.agent_name || "").trim() === selectedAgent
+      )
+    : [];
+
+  const quotedRows = selectedQuoteSalesRows.filter(
+    (row) => String(row?.status || "").toLowerCase() === "quoted"
+  );
+  const issuedRows = selectedQuoteSalesRows.filter(
+    (row) => String(row?.status || "").toLowerCase() === "issued"
+  );
 
   return (
     <div className="container">
@@ -217,7 +243,7 @@ export default function Agents({ agentInsights }) {
                   ? `Agent Details: ${selectedAgent}`
                   : "Agent Details"
               }
-              subtitle="Click an agent name to view their KPI breakdown and insights."
+              subtitle="Select an agent to view KPI cards, insights, and policy activity."
             />
 
             {!selectedAgent ? (
@@ -225,60 +251,234 @@ export default function Agents({ agentInsights }) {
                 Select an agent to view insights.
               </div>
             ) : (
-              <div className="grid-2" style={{ gap: 16, marginTop: 12 }}>
-                <Card pad>
-                  <div style={{ fontWeight: 800, marginBottom: 8 }}>
-                    KPI Breakdown
+              <>
+                <div
+                  className="table-toolbar"
+                  style={{ marginTop: 12, alignItems: "center" }}
+                >
+                  <div className="toolbar-left">
+                    <div style={{ fontWeight: 700 }}>Agent selector</div>
+                    <select
+                      className="input"
+                      style={{ minWidth: 220 }}
+                      value={selectedAgent}
+                      onChange={(event) =>
+                        setSelectedAgent(event.target.value)
+                      }
+                    >
+                      {agentRows.map((agent) => (
+                        <option key={agent.agent} value={agent.agent}>
+                          {agent.agent}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="small">
-                    <div>
-                      Dials:{" "}
+                </div>
+
+                <SectionTitle
+                  title="KPI Cards"
+                  subtitle="Snapshot of daily activity and conversion efficiency."
+                />
+                <div className="kpi-grid" style={{ marginTop: 12 }}>
+                  <div className="kpi">
+                    <div className="kpi-title">Dials</div>
+                    <div className="kpi-value">
                       {selectedInsights?.kpis?.dials?.toLocaleString?.() || "0"}
                     </div>
-                    <div>
-                      Contacts:{" "}
+                    <div className="kpi-hint">Total dials logged.</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Contacts</div>
+                    <div className="kpi-value">
                       {selectedInsights?.kpis?.contacts?.toLocaleString?.() ||
                         "0"}
                     </div>
-                    <div>
-                      Quotes:{" "}
+                    <div className="kpi-hint">Reached contacts.</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Quotes</div>
+                    <div className="kpi-value">
                       {selectedInsights?.kpis?.quotes?.toLocaleString?.() ||
                         "0"}
                     </div>
-                    <div>
-                      Issued:{" "}
+                    <div className="kpi-hint">Quotes sent.</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Issued</div>
+                    <div className="kpi-value">
                       {selectedInsights?.kpis?.issued?.toLocaleString?.() ||
                         "0"}
                     </div>
-                    <div>
-                      Contact Rate:{" "}
+                    <div className="kpi-hint">Policies issued.</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Contact Rate</div>
+                    <div className="kpi-value">
                       {pct(selectedInsights?.kpis?.contactRate || 0)}
                     </div>
-                    <div>
-                      Conversion Rate:{" "}
+                    <div className="kpi-hint">Contacts per dial.</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Conversion Rate</div>
+                    <div className="kpi-value">
                       {pct(selectedInsights?.kpis?.conversionRate || 0)}
                     </div>
-                    <div>
-                      Issued Premium:{" "}
+                    <div className="kpi-hint">Issued / (Quoted + Issued).</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Issued Premium</div>
+                    <div className="kpi-value">
                       {money(selectedInsights?.kpis?.issuedPremium || 0)}
                     </div>
+                    <div className="kpi-hint">Total issued premium.</div>
                   </div>
-                </Card>
+                </div>
 
-                <Card pad>
-                  <div style={{ fontWeight: 800, marginBottom: 8 }}>
-                    Insights
-                  </div>
-                  <div className="small">
+                <SectionTitle
+                  title="Insights"
+                  subtitle="Summary of insight flags for the selected agent."
+                />
+                <Card pad style={{ marginTop: 12 }}>
+                  <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
                     {(selectedInsights?.flags || []).map((flag) => (
-                      <div key={flag.key} style={{ marginBottom: 8 }}>
+                      <li key={flag.key} style={{ marginBottom: 8 }}>
                         <div style={{ fontWeight: 700 }}>{flag.label}</div>
                         <div>{flag.detail}</div>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </Card>
-              </div>
+
+                <SectionTitle
+                  title="Quotes"
+                  subtitle="Quote activity for the selected agent."
+                />
+                <div className="table-card" style={{ marginTop: 12 }}>
+                  <div className="table-toolbar">
+                    <div className="toolbar-left">
+                      <div>
+                        <div className="toolbar-title">Quotes Log</div>
+                        <div className="small">
+                          {quotedRows.length.toLocaleString()} quotes in the
+                          selected range.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Date Quoted</th>
+                          <th>Policyholder</th>
+                          <th>LOB</th>
+                          <th>Policy Type</th>
+                          <th>Business Type</th>
+                          <th className="right">Quoted Premium</th>
+                          <th className="right">Issued Premium</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {quotedRows.map((row, index) => (
+                          <tr key={`${row?.agent_name}-quoted-${index}`}>
+                            <td>{formatDate(row?.date)}</td>
+                            <td>{row?.policyholder || "—"}</td>
+                            <td>{row?.line_of_business || "—"}</td>
+                            <td>{row?.policy_type || "—"}</td>
+                            <td>{row?.business_type || "—"}</td>
+                            <td className="right">
+                              {formatPremium(row?.written_premium)}
+                            </td>
+                            <td className="right">
+                              {formatPremium(row?.issued_premium)}
+                            </td>
+                          </tr>
+                        ))}
+                        {quotedRows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              style={{
+                                padding: 14,
+                                color: "var(--muted)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              No quoted policies for this agent.
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <SectionTitle
+                  title="Issued Policies"
+                  subtitle="Issued policies for the selected agent."
+                />
+                <div className="table-card" style={{ marginTop: 12 }}>
+                  <div className="table-toolbar">
+                    <div className="toolbar-left">
+                      <div>
+                        <div className="toolbar-title">Issued Policies</div>
+                        <div className="small">
+                          {issuedRows.length.toLocaleString()} issued policies
+                          in the selected range.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Date Quoted</th>
+                          <th>Policyholder</th>
+                          <th>LOB</th>
+                          <th>Policy Type</th>
+                          <th>Business Type</th>
+                          <th className="right">Quoted Premium</th>
+                          <th className="right">Issued Premium</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {issuedRows.map((row, index) => (
+                          <tr key={`${row?.agent_name}-issued-${index}`}>
+                            <td>{formatDate(row?.date)}</td>
+                            <td>{row?.policyholder || "—"}</td>
+                            <td>{row?.line_of_business || "—"}</td>
+                            <td>{row?.policy_type || "—"}</td>
+                            <td>{row?.business_type || "—"}</td>
+                            <td className="right">
+                              {formatPremium(row?.written_premium)}
+                            </td>
+                            <td className="right">
+                              {formatPremium(row?.issued_premium)}
+                            </td>
+                          </tr>
+                        ))}
+                        {issuedRows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              style={{
+                                padding: 14,
+                                color: "var(--muted)",
+                                fontWeight: 700,
+                              }}
+                            >
+                              No issued policies for this agent.
+                            </td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </Card>
