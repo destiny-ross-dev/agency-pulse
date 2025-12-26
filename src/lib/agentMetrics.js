@@ -171,6 +171,14 @@ export function computeAgentInsights({
       });
     }
 
+    if (flags.length === 0) {
+      flags.push({
+        key: "within-benchmark",
+        label: "No concerns noted",
+        detail: "Agent performance is within benchmark.",
+      });
+    }
+
     acc[agent.agent] = {
       kpis: {
         dials: agent.dials,
