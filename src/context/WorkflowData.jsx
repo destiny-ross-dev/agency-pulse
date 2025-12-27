@@ -212,6 +212,15 @@ export function WorkflowDataProvider({ children }) {
     });
   }, [filteredRows]);
 
+  const allAgentRows = useMemo(() => {
+    if (!normalizedAll) return [];
+
+    return computeAgentMetrics({
+      activityRows: normalizedAll.activityAll,
+      quoteSalesRows: normalizedAll.quoteSalesAll,
+    });
+  }, [normalizedAll]);
+
   const agentInsights = useMemo(() => {
     if (!filteredRows) return { byAgent: {}, thresholds: {} };
 
@@ -281,6 +290,7 @@ export function WorkflowDataProvider({ children }) {
     metrics,
     health,
     agentRows,
+    allAgentRows,
     agentInsights,
     issuedPremiumSeries,
     rangeLabel,

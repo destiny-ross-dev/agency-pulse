@@ -17,8 +17,13 @@ import { money, pct } from "../../lib/formatHelpers";
 export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
   const [selectedAgent, setSelectedAgent] = useState("");
-  const { canAnalyze, filteredRows, agentRows, rangeLabel } = useWorkflowData();
+  const { canAnalyze, filteredRows, agentRows, allAgentRows, rangeLabel } =
+    useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
+  const displayAgents = allAgentRows.length > 0 ? allAgentRows : agentRows;
+  const agentRowsByName = new Map(
+    agentRows.map((agent) => [agent.agent, agent])
+  );
 
   const totals = filteredRows
     ? {
@@ -28,7 +33,7 @@ export default function Agents({ agentInsights }) {
     : null;
 
   const activeSelectedAgent =
-    selectedAgent || (agentRows.length > 0 ? agentRows[0].agent : "");
+    selectedAgent || (displayAgents.length > 0 ? displayAgents[0].agent : "");
 
   const selectedInsights = activeSelectedAgent
     ? insightsByAgent[activeSelectedAgent]
@@ -103,7 +108,7 @@ export default function Agents({ agentInsights }) {
                 </div>
 
                 <span className="pill-mini">
-                  Agents: {agentRows.length.toLocaleString()}
+                  Agents: {displayAgents.length.toLocaleString()}
                 </span>
               </div>
 
@@ -145,7 +150,8 @@ export default function Agents({ agentInsights }) {
                 </thead>
 
                 <tbody>
-                  {agentRows.map((agent) => {
+                  {displayAgents.map((agent) => {
+                    const rowData = agentRowsByName.get(agent.agent);
                     const isSelected = agent.agent === activeSelectedAgent;
                     return (
                       <tr key={agent.agent}>
@@ -169,42 +175,56 @@ export default function Agents({ agentInsights }) {
                         {agentView === "totals" ? (
                           <>
                             <td className="right">
-                              {money(agent.issuedPremium)}
+                              {rowData ? money(rowData.issuedPremium) : "—"}
                             </td>
                             <td className="right">
-                              {agent.issued.toLocaleString()}
+                              {rowData ? rowData.issued.toLocaleString() : "—"}
                             </td>
                             <td className="right">
-                              {agent.quotes.toLocaleString()}
+                              {rowData ? rowData.quotes.toLocaleString() : "—"}
                             </td>
                             <td className="right">
-                              {agent.dials.toLocaleString()}
+                              {rowData ? rowData.dials.toLocaleString() : "—"}
                             </td>
                             <td className="right">
-                              {agent.contacts.toLocaleString()}
+                              {rowData ? rowData.contacts.toLocaleString() : "—"}
                             </td>
-                            <td className="right">{pct(agent.contactRate)}</td>
                             <td className="right">
-                              {pct(agent.conversionRate)}
+                              {rowData ? pct(rowData.contactRate) : "—"}
+                            </td>
+                            <td className="right">
+                              {rowData ? pct(rowData.conversionRate) : "—"}
                             </td>
                           </>
                         ) : (
                           <>
                             <td className="right">
-                              {agent.issuedPer100Dials.toFixed(1)}
+                              {rowData
+                                ? rowData.issuedPer100Dials.toFixed(1)
+                                : "—"}
                             </td>
                             <td className="right">
-                              {agent.quotesPer100Dials.toFixed(1)}
+                              {rowData
+                                ? rowData.quotesPer100Dials.toFixed(1)
+                                : "—"}
                             </td>
                             <td className="right">
-                              {money(agent.issuedPremPerDial)}
+                              {rowData
+                                ? money(rowData.issuedPremPerDial)
+                                : "—"}
                             </td>
                             <td className="right">
-                              {money(agent.issuedPremPerContact)}
+                              {rowData
+                                ? money(rowData.issuedPremPerContact)
+                                : "—"}
                             </td>
-                            <td className="right">{pct(agent.contactRate)}</td>
                             <td className="right">
-                              {money(agent.issuedPremPerIssued)}
+                              {rowData ? pct(rowData.contactRate) : "—"}
+                            </td>
+                            <td className="right">
+                              {rowData
+                                ? money(rowData.issuedPremPerIssued)
+                                : "—"}
                             </td>
                           </>
                         )}
@@ -212,7 +232,7 @@ export default function Agents({ agentInsights }) {
                     );
                   })}
 
-                  {agentRows.length === 0 ? (
+                  {displayAgents.length === 0 ? (
                     <tr>
                       <td
                         colSpan={9}
