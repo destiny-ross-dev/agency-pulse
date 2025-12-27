@@ -50,8 +50,19 @@ export function WorkflowDataProvider({ children }) {
   const [rangeMode, setRangeMode] = useState("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [kpiGoals, setKpiGoals] = useState(null);
-  const [kpiGoalsLoaded, setKpiGoalsLoaded] = useState(false);
+  const [kpiGoals, setKpiGoals] = useState(() => {
+    try {
+      const saved = localStorage.getItem("agencyPulse.kpiGoals");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_KPI_GOALS, ...parsed };
+      }
+    } catch {
+      // ignore
+    }
+    return { ...DEFAULT_KPI_GOALS };
+  });
+  const [kpiGoalsLoaded] = useState(true);
 
   const allUploaded = Boolean(
     datasets.activity && datasets.quotesSales && datasets.paidLeads
@@ -73,22 +84,6 @@ export function WorkflowDataProvider({ children }) {
     () => Object.values(validation).every((v) => v.ok),
     [validation]
   );
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("agencyPulse.kpiGoals");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setKpiGoals({ ...DEFAULT_KPI_GOALS, ...parsed });
-        setKpiGoalsLoaded(true);
-        return;
-      }
-    } catch {
-      // ignore
-    }
-    setKpiGoals({ ...DEFAULT_KPI_GOALS });
-    setKpiGoalsLoaded(true);
-  }, []);
 
   useEffect(() => {
     if (!kpiGoalsLoaded || !kpiGoals) return;
