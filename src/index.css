@@ -618,8 +618,16 @@ tbody tr:hover {
   gap: 14px;
 }
 
+.kpi-grid--agent {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 @media (max-width: 960px) {
   .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid--agent {
     grid-template-columns: 1fr;
   }
 }

@@ -187,6 +187,7 @@ export function computeAgentInsights({
         issued: agent.issued,
         conversionRate: agent.conversionRate,
         contactRate: agent.contactRate,
+        pitchRate: agent.quotesPerContact,
         issuedPremium: agent.issuedPremium,
       },
       flags,

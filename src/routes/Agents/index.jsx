@@ -253,7 +253,7 @@ export default function Agents({ agentInsights }) {
               </div>
             ) : (
               <>
-                <div className="kpi-grid" style={{ marginTop: 12 }}>
+                <div className="kpi-grid kpi-grid--agent" style={{ marginTop: 12 }}>
                   <div className="kpi">
                     <div className="kpi-title">Dials</div>
                     <div className="kpi-value">
@@ -291,6 +291,13 @@ export default function Agents({ agentInsights }) {
                       {pct(selectedInsights?.kpis?.contactRate || 0)}
                     </div>
                     <div className="kpi-hint">Contacts per dial.</div>
+                  </div>
+                  <div className="kpi">
+                    <div className="kpi-title">Pitch Rate</div>
+                    <div className="kpi-value">
+                      {pct(selectedInsights?.kpis?.pitchRate || 0)}
+                    </div>
+                    <div className="kpi-hint">Quotes per contact.</div>
                   </div>
                   <div className="kpi">
                     <div className="kpi-title">Conversion Rate</div>
