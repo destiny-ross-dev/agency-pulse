@@ -54,6 +54,7 @@ const DEMO_FILES = {
 
 function StepWorkflow({ step }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
   const [healthOpen, setHealthOpen] = useState(true);
@@ -83,8 +84,16 @@ function StepWorkflow({ step }) {
     kpiGoals,
     setKpiGoals,
     updateGoal,
-    kpiGoalsLoaded,
   } = useWorkflowData();
+  const guardError = location.state?.guardError || "";
+  const guardKey = location.state?.guardKey || "";
+  const guardInvalid =
+    guardKey === "uploads"
+      ? !allUploaded
+      : guardKey === "mappings"
+        ? !canAnalyze
+        : false;
+  const displayError = error || (guardInvalid ? guardError : "");
 
   async function handlePickFile(datasetKey) {
     setError("");
@@ -234,20 +243,30 @@ function StepWorkflow({ step }) {
 
   useEffect(() => {
     if (step === 2 && !allUploaded) {
-      setError("Upload all three CSV files to continue.");
-      navigate(stepPaths[1], { replace: true });
+      navigate(stepPaths[1], {
+        replace: true,
+        state: {
+          guardError: "Upload all three CSV files to continue.",
+          guardKey: "uploads",
+        },
+      });
       return;
     }
     if (step === 3 && !canAnalyze) {
-      setError("Map all required fields to continue.");
-      navigate(stepPaths[2], { replace: true });
+      navigate(stepPaths[2], {
+        replace: true,
+        state: {
+          guardError: "Map all required fields to continue.",
+          guardKey: "mappings",
+        },
+      });
     }
   }, [step, allUploaded, canAnalyze, navigate]);
 
   return (
     <div>
       <div className="container">
-        {error ? <div className="alert">{error}</div> : null}
+        {displayError ? <div className="alert">{displayError}</div> : null}
 
         {step === 1 ? (
           <DataImport
@@ -272,7 +291,7 @@ function StepWorkflow({ step }) {
           />
         ) : null}
 
-        {step === 3 && kpiGoalsLoaded ? (
+        {step === 3 ? (
           <Dashboard
             metrics={metrics}
             health={health}

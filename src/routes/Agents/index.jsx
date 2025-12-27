@@ -24,7 +24,6 @@ export default function Agents({ agentInsights }) {
     allAgentRows,
     rangeLabel,
     kpiGoals,
-    kpiGoalsLoaded,
   } = useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
   const displayAgents = allAgentRows.length > 0 ? allAgentRows : agentRows;
@@ -173,18 +172,6 @@ export default function Agents({ agentInsights }) {
     ...(pitchRateInsight ? [pitchRateInsight] : []),
     ...(selectedInsights?.flags || []),
   ];
-
-  if (!kpiGoalsLoaded) {
-    return (
-      <div className="container">
-        <Card pad>
-          <div className="small" style={{ color: "var(--muted)" }}>
-            Loading goals...
-          </div>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container">
