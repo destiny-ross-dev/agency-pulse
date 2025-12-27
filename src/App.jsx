@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import { parseCsvFile, parseCsvText } from "./lib/csv";
 import { SCHEMAS } from "./lib/schemas";
@@ -21,6 +27,16 @@ const stepPaths = {
   2: "/map-columns",
   3: "/dashboard",
 };
+
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
+
+  return null;
+}
 
 const DEMO_FILES = {
   activity: {
@@ -327,6 +343,7 @@ function AgentsRoute() {
 export default function App() {
   return (
     <WorkflowDataProvider>
+      <ScrollToTop />
       <TopBar />
       <DateRangeFilter />
       <Routes>
