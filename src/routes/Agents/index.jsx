@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import Card from "../../components/common/Card";
@@ -27,14 +27,11 @@ export default function Agents({ agentInsights }) {
       }
     : null;
 
-  useEffect(() => {
-    if (!selectedAgent && agentRows.length > 0) {
-      setSelectedAgent(agentRows[0].agent);
-    }
-  }, [agentRows, selectedAgent]);
+  const activeSelectedAgent =
+    selectedAgent || (agentRows.length > 0 ? agentRows[0].agent : "");
 
-  const selectedInsights = selectedAgent
-    ? insightsByAgent[selectedAgent]
+  const selectedInsights = activeSelectedAgent
+    ? insightsByAgent[activeSelectedAgent]
     : null;
   const quoteSalesRows = filteredRows?.quoteSalesRows || [];
 
@@ -49,9 +46,9 @@ export default function Agents({ agentInsights }) {
     return money(premium);
   }
 
-  const selectedQuoteSalesRows = selectedAgent
+  const selectedQuoteSalesRows = activeSelectedAgent
     ? quoteSalesRows.filter(
-        (row) => String(row?.agent_name || "").trim() === selectedAgent
+        (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
       )
     : [];
 
@@ -149,9 +146,7 @@ export default function Agents({ agentInsights }) {
 
                 <tbody>
                   {agentRows.map((agent) => {
-                    const insightFlags =
-                      insightsByAgent[agent.agent]?.flags || [];
-                    const isSelected = agent.agent === selectedAgent;
+                    const isSelected = agent.agent === activeSelectedAgent;
                     return (
                       <tr key={agent.agent}>
                         <td style={{ fontWeight: 900 }}>
@@ -241,13 +236,13 @@ export default function Agents({ agentInsights }) {
               icon={<PersonIcon />}
               title={
                 selectedAgent
-                  ? `Agent Details: ${selectedAgent}`
+                  ? `Agent Details: ${activeSelectedAgent}`
                   : "Agent Details"
               }
               subtitle="Select an agent to view KPI cards, insights, and policy activity."
             />
 
-            {!selectedAgent ? (
+            {!activeSelectedAgent ? (
               <div className="small" style={{ marginTop: 8 }}>
                 Select an agent to view insights.
               </div>
