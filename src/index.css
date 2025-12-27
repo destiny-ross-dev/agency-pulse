@@ -55,8 +55,8 @@ select {
 
 .container {
   max-width: var(--maxw);
-  margin: 0 auto;
-  padding: 32px 20px 60px;
+  margin: 20px auto;
+  /* padding: 32px 20px; */
 }
 
 .topbar {
