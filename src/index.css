@@ -1569,3 +1569,7 @@ tbody tr:hover {
     align-items: flex-start;
   }
 }
+
+.hr {
+  margin: 10px 0;
+}

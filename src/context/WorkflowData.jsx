@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { SCHEMAS } from "../lib/schemas";
 import { normalizeRows } from "../lib/normalize";
@@ -6,6 +6,7 @@ import { computeCoreMetrics } from "../lib/kpis";
 import { computeDataHealth } from "../lib/dataHealth";
 import { computeAgentInsights, computeAgentMetrics } from "../lib/agentMetrics";
 import { computeIssuedPremiumSeries } from "../lib/issuedPremiumSeries";
+import { clampNum } from "../lib/formatHelpers";
 import {
   endOfDay,
   findCoverage,
@@ -17,6 +18,21 @@ import {
 } from "../lib/dates";
 
 const WorkflowDataContext = createContext(null);
+const DEFAULT_KPI_GOALS = {
+  contactRateTargetPct: 10,
+  quoteRateTargetPct: 30,
+  issueRateTargetPct: 35,
+  callsPerDayTarget: 150,
+  householdsQuotedPerDayTarget: 6,
+};
+
+const GOAL_LIMITS = {
+  contactRateTargetPct: { min: 0, max: 100 },
+  quoteRateTargetPct: { min: 0, max: 100 },
+  issueRateTargetPct: { min: 0, max: 100 },
+  callsPerDayTarget: { min: 0, max: Number.POSITIVE_INFINITY },
+  householdsQuotedPerDayTarget: { min: 0, max: Number.POSITIVE_INFINITY },
+};
 
 export function WorkflowDataProvider({ children }) {
   const [datasets, setDatasets] = useState({
@@ -34,6 +50,8 @@ export function WorkflowDataProvider({ children }) {
   const [rangeMode, setRangeMode] = useState("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
+  const [kpiGoals, setKpiGoals] = useState(null);
+  const [kpiGoalsLoaded, setKpiGoalsLoaded] = useState(false);
 
   const allUploaded = Boolean(
     datasets.activity && datasets.quotesSales && datasets.paidLeads
@@ -55,6 +73,40 @@ export function WorkflowDataProvider({ children }) {
     () => Object.values(validation).every((v) => v.ok),
     [validation]
   );
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("agencyPulse.kpiGoals");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setKpiGoals({ ...DEFAULT_KPI_GOALS, ...parsed });
+        setKpiGoalsLoaded(true);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    setKpiGoals({ ...DEFAULT_KPI_GOALS });
+    setKpiGoalsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!kpiGoalsLoaded || !kpiGoals) return;
+    try {
+      localStorage.setItem("agencyPulse.kpiGoals", JSON.stringify(kpiGoals));
+    } catch {
+      // ignore
+    }
+  }, [kpiGoals, kpiGoalsLoaded]);
+
+  function updateGoal(key, raw) {
+    const limits = GOAL_LIMITS[key] || {
+      min: 0,
+      max: Number.POSITIVE_INFINITY,
+    };
+    const next = clampNum(raw, limits.min, limits.max);
+    setKpiGoals((prev) => ({ ...(prev || DEFAULT_KPI_GOALS), [key]: next }));
+  }
 
   const activeRange = useMemo(() => {
     if (rangeMode === "custom") {
@@ -295,6 +347,10 @@ export function WorkflowDataProvider({ children }) {
     issuedPremiumSeries,
     rangeLabel,
     resetWorkflowData,
+    kpiGoals,
+    setKpiGoals,
+    kpiGoalsLoaded,
+    updateGoal,
   };
 
   return (

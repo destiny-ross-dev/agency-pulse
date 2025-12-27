@@ -12,7 +12,6 @@ import { SCHEMAS } from "./lib/schemas";
 import { suggestMapping } from "./lib/mapping";
 import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
 import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
-import { clampNum } from "./lib/formatHelpers";
 
 import TopBar from "./components/layout/TopBar";
 import DateRangeFilter from "./components/common/DateRangeFilter";
@@ -67,12 +66,6 @@ function StepWorkflow({ step }) {
   const [funnelMode, setFunnelMode] = useState("agency");
   const [selectedAgent, setSelectedAgent] = useState("");
 
-  const [kpiGoals, setKpiGoals] = useState({
-    contactRateTargetPct: 10,
-    quoteRateTargetPct: 30,
-    issueRateTargetPct: 35,
-  });
-
   const {
     datasets,
     setDatasets,
@@ -87,32 +80,11 @@ function StepWorkflow({ step }) {
     issuedPremiumSeries,
     rangeLabel,
     resetWorkflowData,
+    kpiGoals,
+    setKpiGoals,
+    updateGoal,
+    kpiGoalsLoaded,
   } = useWorkflowData();
-
-  function updateGoal(key, raw) {
-    const next = clampNum(raw, 0, 100);
-    setKpiGoals?.((prev) => ({ ...(prev || kpiGoals), [key]: next }));
-  }
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("agencyPulse.kpiGoals");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setKpiGoals((prev) => ({ ...prev, ...parsed }));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("agencyPulse.kpiGoals", JSON.stringify(kpiGoals));
-    } catch {
-      // ignore
-    }
-  }, [kpiGoals]);
 
   async function handlePickFile(datasetKey) {
     setError("");
@@ -300,7 +272,7 @@ function StepWorkflow({ step }) {
           />
         ) : null}
 
-        {step === 3 ? (
+        {step === 3 && kpiGoalsLoaded ? (
           <Dashboard
             metrics={metrics}
             health={health}

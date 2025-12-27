@@ -1,4 +1,14 @@
-export default function GoalRow({ title, subtitle, value, onChange }) {
+export default function GoalRow({
+  title,
+  subtitle,
+  value,
+  onChange,
+  unit = "%",
+  min = 0,
+  max = 100,
+  step = 1,
+}) {
+  const maxValue = max ?? undefined;
   return (
     <div
       style={{
@@ -17,15 +27,19 @@ export default function GoalRow({ title, subtitle, value, onChange }) {
         <input
           className="goal-input"
           type="number"
-          min="0"
-          max="100"
-          step="1"
+          min={min}
+          max={maxValue}
+          step={step}
           value={Number(value ?? 0)}
           onChange={(e) => onChange?.(e.target.value)}
           inputMode="numeric"
           aria-label={title}
         />
-        <span style={{ color: "var(--muted2)", fontWeight: 900 }}>%</span>
+        {unit ? (
+          <span style={{ color: "var(--muted2)", fontWeight: 900 }}>
+            {unit}
+          </span>
+        ) : null}
       </div>
     </div>
   );

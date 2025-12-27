@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import Card from "../../components/common/Card";
@@ -17,8 +17,15 @@ import { money, pct } from "../../lib/formatHelpers";
 export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
   const [selectedAgent, setSelectedAgent] = useState("");
-  const { canAnalyze, filteredRows, agentRows, allAgentRows, rangeLabel } =
-    useWorkflowData();
+  const {
+    canAnalyze,
+    filteredRows,
+    agentRows,
+    allAgentRows,
+    rangeLabel,
+    kpiGoals,
+    kpiGoalsLoaded,
+  } = useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
   const displayAgents = allAgentRows.length > 0 ? allAgentRows : agentRows;
   const agentRowsByName = new Map(
@@ -39,6 +46,10 @@ export default function Agents({ agentInsights }) {
     ? insightsByAgent[activeSelectedAgent]
     : null;
   const quoteSalesRows = filteredRows?.quoteSalesRows || [];
+  const agencyContactRate = agentInsights?.benchmarks?.contactRate ?? 0;
+  const agencyPitchRate = agentInsights?.benchmarks?.pitchRate ?? 0;
+  const contactRateTarget = (kpiGoals?.contactRateTargetPct ?? 10) / 100;
+  const pitchRateTarget = (kpiGoals?.quoteRateTargetPct ?? 30) / 100;
 
   function formatDate(value) {
     const parsed = parseDateLoose(value);
@@ -63,6 +74,117 @@ export default function Agents({ agentInsights }) {
   const issuedRows = selectedQuoteSalesRows.filter(
     (row) => String(row?.status || "").toLowerCase() === "issued"
   );
+  const contactRateInsight = useMemo(() => {
+    if (!selectedInsights) return null;
+    const dials = selectedInsights?.kpis?.dials ?? 0;
+    if (dials <= 0) return null;
+
+    const agentRate = selectedInsights?.kpis?.contactRate ?? 0;
+    const averageRate = agencyContactRate;
+    const targetRate = contactRateTarget;
+
+    const averageDelta = agentRate - averageRate;
+    const targetDelta = agentRate - targetRate;
+
+    const averageLine =
+      averageRate > 0
+        ? `Contact rate of ${pct(Math.abs(agentRate))} is ${pct(
+            Math.abs(averageDelta)
+          )} ${averageDelta >= 0 ? "above" : "below"} the agency average (${pct(
+            averageRate
+          )}).`
+        : "Agency average contact rate is not available yet.";
+
+    const targetLine =
+      targetRate > 0
+        ? `Agent is ${pct(Math.abs(targetDelta))} ${
+            targetDelta >= 0 ? "above" : "below"
+          } the target (${pct(targetRate)}).`
+        : null;
+
+    let coachingHint = "";
+    if (
+      averageRate > 0 &&
+      targetRate > 0 &&
+      agentRate < averageRate &&
+      agentRate < targetRate
+    ) {
+      coachingHint =
+        " This suggests dialing strategy, timing, or list quality may be the biggest lever.";
+    }
+
+    return {
+      key: "contact-rate-gap",
+      label: "Contact Efficiency",
+      detail:
+        [averageLine, targetLine].filter(Boolean).join(" ") + coachingHint,
+    };
+  }, [selectedInsights, agencyContactRate, contactRateTarget]);
+
+  const pitchRateInsight = useMemo(() => {
+    if (!selectedInsights) return null;
+    const contacts = selectedInsights?.kpis?.contacts ?? 0;
+    if (contacts <= 0) return null;
+
+    const agentRate = selectedInsights?.kpis?.pitchRate ?? 0;
+    const averageRate = agencyPitchRate;
+    const targetRate = pitchRateTarget;
+
+    const averageDelta = agentRate - averageRate;
+    const targetDelta = agentRate - targetRate;
+
+    const averageLine =
+      averageRate > 0
+        ? `Pitch rate of ${pct(Math.abs(agentRate))} is ${pct(
+            Math.abs(averageDelta)
+          )} ${averageDelta >= 0 ? "above" : "below"} the agency average (${pct(
+            averageRate
+          )}).`
+        : "Agency average pitch rate is not available yet.";
+
+    const targetLine =
+      targetRate > 0
+        ? `Agent is ${pct(Math.abs(targetDelta))} ${
+            targetDelta >= 0 ? "above" : "below"
+          } the target (${pct(targetRate)}).`
+        : null;
+
+    let coachingHint = "";
+    if (
+      averageRate > 0 &&
+      targetRate > 0 &&
+      agentRate < averageRate &&
+      agentRate < targetRate
+    ) {
+      coachingHint =
+        " This suggests pitch quality, qualification, or discovery may be the biggest lever.";
+    }
+
+    return {
+      key: "pitch-rate-gap",
+      label: "Pitch Efficiency",
+      detail:
+        [averageLine, targetLine].filter(Boolean).join(" ") + coachingHint,
+    };
+  }, [selectedInsights, agencyPitchRate, pitchRateTarget]);
+
+  const selectedFlags = [
+    ...(contactRateInsight ? [contactRateInsight] : []),
+    ...(pitchRateInsight ? [pitchRateInsight] : []),
+    ...(selectedInsights?.flags || []),
+  ];
+
+  if (!kpiGoalsLoaded) {
+    return (
+      <div className="container">
+        <Card pad>
+          <div className="small" style={{ color: "var(--muted)" }}>
+            Loading goals...
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -187,7 +309,9 @@ export default function Agents({ agentInsights }) {
                               {rowData ? rowData.dials.toLocaleString() : "—"}
                             </td>
                             <td className="right">
-                              {rowData ? rowData.contacts.toLocaleString() : "—"}
+                              {rowData
+                                ? rowData.contacts.toLocaleString()
+                                : "—"}
                             </td>
                             <td className="right">
                               {rowData ? pct(rowData.contactRate) : "—"}
@@ -209,9 +333,7 @@ export default function Agents({ agentInsights }) {
                                 : "—"}
                             </td>
                             <td className="right">
-                              {rowData
-                                ? money(rowData.issuedPremPerDial)
-                                : "—"}
+                              {rowData ? money(rowData.issuedPremPerDial) : "—"}
                             </td>
                             <td className="right">
                               {rowData
@@ -340,7 +462,7 @@ export default function Agents({ agentInsights }) {
                 />
                 <Card pad style={{ marginTop: 12 }}>
                   <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
-                    {(selectedInsights?.flags || []).map((flag) => (
+                    {selectedFlags.map((flag) => (
                       <li key={flag.key} style={{ marginBottom: 8 }}>
                         <div style={{ fontWeight: 700 }}>{flag.label}</div>
                         <div>{flag.detail}</div>

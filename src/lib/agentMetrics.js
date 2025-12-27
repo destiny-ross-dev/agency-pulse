@@ -129,6 +129,18 @@ export function computeAgentInsights({
 }) {
   const agents = computeAgentMetrics({ activityRows, quoteSalesRows });
 
+  const totals = agents.reduce(
+    (acc, agent) => {
+      acc.dials += agent.dials || 0;
+      acc.contacts += agent.contacts || 0;
+      acc.quotes += agent.quotes || 0;
+      return acc;
+    },
+    { dials: 0, contacts: 0, quotes: 0 }
+  );
+  const agencyContactRate = div(totals.contacts, totals.dials);
+  const agencyPitchRate = div(totals.quotes, totals.contacts);
+
   const conversionRates = agents.map((agent) => agent.conversionRate || 0);
   const dialVolumes = agents.map((agent) => agent.dials || 0);
   const quoteVolumes = agents.map((agent) => agent.quotes || 0);
@@ -196,5 +208,12 @@ export function computeAgentInsights({
     return acc;
   }, {});
 
-  return { byAgent, thresholds };
+  return {
+    byAgent,
+    thresholds,
+    benchmarks: {
+      contactRate: agencyContactRate,
+      pitchRate: agencyPitchRate,
+    },
+  };
 }

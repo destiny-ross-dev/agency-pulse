@@ -18,6 +18,24 @@ export default function KPIGoals({ goals, updateGoal }) {
 
         <div style={{ padding: 14 }}>
           <GoalRow
+            title="Calls per Day Target"
+            subtitle="Daily outbound dial goal."
+            value={goals.callsPerDayTarget}
+            onChange={(v) => updateGoal("callsPerDayTarget", v)}
+            unit="per day"
+            max={null}
+          />
+          <div className="hr" />
+          <GoalRow
+            title="Households Quoted per Day Target"
+            subtitle="Daily quoting volume target."
+            value={goals.householdsQuotedPerDayTarget}
+            onChange={(v) => updateGoal("householdsQuotedPerDayTarget", v)}
+            unit="per day"
+            max={null}
+          />
+          <div className="hr" />
+          <GoalRow
             title="Contact Rate Target"
             subtitle="Contact Ratio - Dials → Contacts"
             value={goals.contactRateTargetPct}
