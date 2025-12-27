@@ -1,14 +1,11 @@
 import Card from "../../components/common/Card";
 import SectionTitle from "../../components/common/SectionTitle";
-import SegButton from "../../components/common/SegButton";
 import { PulseIcon } from "../../components/common/icons";
 import DataHealthPanel from "../../components/health/DataHealthPanel";
 import GoalsPanel from "../../components/goals/GoalsPanel";
 import FunnelDiagnostics from "../../components/funnel/FunnelDiagnostics";
 import AgencyKPIs from "../../components/kpis/AgencyKPIs";
 import { money, money2, pct, ratio } from "../../lib/formatHelpers";
-import { formatYMD } from "../../lib/dates";
-
 export default function Dashboard({
   metrics,
   health,
@@ -22,13 +19,6 @@ export default function Dashboard({
   agentView,
   setAgentView,
   issuedPremiumSeries,
-  rangeMode,
-  setRangeMode,
-  customStart,
-  setCustomStart,
-  customEnd,
-  setCustomEnd,
-  coverage,
   rangeLabel,
   funnelData,
   funnelMode,
@@ -52,92 +42,6 @@ export default function Dashboard({
           title="Core Metrics"
           subtitle="Computed from the mapped files (now filterable by date range)."
         />
-
-        <div className="filters">
-          <div className="filters-left">
-            <span className="filters-title">Date Range</span>
-
-            <div className="seg seg-scroll">
-              <SegButton
-                active={rangeMode === "all"}
-                onClick={() => setRangeMode("all")}
-              >
-                All Time
-              </SegButton>
-              <SegButton
-                active={rangeMode === "7d"}
-                onClick={() => setRangeMode("7d")}
-              >
-                Last 7
-              </SegButton>
-              <SegButton
-                active={rangeMode === "30d"}
-                onClick={() => setRangeMode("30d")}
-              >
-                Last 30
-              </SegButton>
-              <SegButton
-                active={rangeMode === "90d"}
-                onClick={() => setRangeMode("90d")}
-              >
-                Last 90
-              </SegButton>
-              <SegButton
-                active={rangeMode === "365d"}
-                onClick={() => setRangeMode("365d")}
-              >
-                Last Year
-              </SegButton>
-              <SegButton
-                active={rangeMode === "custom"}
-                onClick={() => setRangeMode("custom")}
-              >
-                Custom
-              </SegButton>
-            </div>
-
-            {rangeMode === "custom" ? (
-              <div className="date-range-inputs">
-                <input
-                  className="date-input"
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                />
-                <span className="date-sep">to</span>
-                <input
-                  className="date-input"
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                />
-              </div>
-            ) : null}
-          </div>
-
-          <div className="filters-right">
-            <div className="coverage-block">
-              {coverage ? (
-                <div
-                  className="coverage"
-                  title="Date coverage detected from your uploaded files"
-                >
-                  <span className="dot" />
-                  <span className="label">Coverage:</span>
-                  <span className="range">
-                    {formatYMD(coverage.start)} → {formatYMD(coverage.end)}
-                  </span>
-                </div>
-              ) : (
-                <span>Coverage: —</span>
-              )}
-            </div>
-            <div className="filters-meta">
-              <span>Showing:</span>
-              <span className="filters-range">{rangeLabel}</span>
-            </div>
-          </div>
-        </div>
 
         <DataHealthPanel
           health={health}
