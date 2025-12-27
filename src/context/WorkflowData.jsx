@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SCHEMAS } from "../lib/schemas";
 import { normalizeRows } from "../lib/normalize";
@@ -16,8 +16,8 @@ import {
   startOfDay,
   toInputDate,
 } from "../lib/dates";
+import { WorkflowDataContext } from "./WorkflowDataContext";
 
-const WorkflowDataContext = createContext(null);
 const DEFAULT_KPI_GOALS = {
   contactRateTargetPct: 10,
   quoteRateTargetPct: 30,
@@ -33,6 +33,16 @@ const GOAL_LIMITS = {
   callsPerDayTarget: { min: 0, max: Number.POSITIVE_INFINITY },
   householdsQuotedPerDayTarget: { min: 0, max: Number.POSITIVE_INFINITY },
 };
+
+function getQuoteSalesDate(row) {
+  const status = String(row?.status || "")
+    .trim()
+    .toLowerCase();
+  if (status === "issued") {
+    return row?.date_issued || row?.date;
+  }
+  return row?.date;
+}
 
 export function WorkflowDataProvider({ children }) {
   const [datasets, setDatasets] = useState({
@@ -50,8 +60,18 @@ export function WorkflowDataProvider({ children }) {
   const [rangeMode, setRangeMode] = useState("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
-  const [kpiGoals, setKpiGoals] = useState(null);
-  const [kpiGoalsLoaded, setKpiGoalsLoaded] = useState(false);
+  const [kpiGoals, setKpiGoals] = useState(() => {
+    try {
+      const saved = localStorage.getItem("agencyPulse.kpiGoals");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_KPI_GOALS, ...parsed };
+      }
+    } catch {
+      // ignore
+    }
+    return { ...DEFAULT_KPI_GOALS };
+  });
 
   const allUploaded = Boolean(
     datasets.activity && datasets.quotesSales && datasets.paidLeads
@@ -75,29 +95,13 @@ export function WorkflowDataProvider({ children }) {
   );
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("agencyPulse.kpiGoals");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setKpiGoals({ ...DEFAULT_KPI_GOALS, ...parsed });
-        setKpiGoalsLoaded(true);
-        return;
-      }
-    } catch {
-      // ignore
-    }
-    setKpiGoals({ ...DEFAULT_KPI_GOALS });
-    setKpiGoalsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (!kpiGoalsLoaded || !kpiGoals) return;
+    if (!kpiGoals) return;
     try {
       localStorage.setItem("agencyPulse.kpiGoals", JSON.stringify(kpiGoals));
     } catch {
       // ignore
     }
-  }, [kpiGoals, kpiGoalsLoaded]);
+  }, [kpiGoals]);
 
   function updateGoal(key, raw) {
     const limits = GOAL_LIMITS[key] || {
@@ -118,33 +122,29 @@ export function WorkflowDataProvider({ children }) {
     return makePresetRange(rangeMode);
   }, [rangeMode, customStart, customEnd]);
 
-  function filterByRange(rows, dateKey = "date") {
-    if (!activeRange) return rows;
-    const { start, end } = activeRange;
-    return rows.filter((r) => {
-      const d = parseDateLoose(r?.[dateKey]);
-      return inRange(d, start, end);
-    });
-  }
+  const filterByRange = useCallback(
+    (rows, dateKey = "date") => {
+      if (!activeRange) return rows;
+      const { start, end } = activeRange;
+      return rows.filter((r) => {
+        const d = parseDateLoose(r?.[dateKey]);
+        return inRange(d, start, end);
+      });
+    },
+    [activeRange]
+  );
 
-  function getQuoteSalesDate(row) {
-    const status = String(row?.status || "")
-      .trim()
-      .toLowerCase();
-    if (status === "issued") {
-      return row?.date_issued || row?.date;
-    }
-    return row?.date;
-  }
-
-  function filterQuoteSalesByRange(rows) {
-    if (!activeRange) return rows;
-    const { start, end } = activeRange;
-    return rows.filter((row) => {
-      const d = parseDateLoose(getQuoteSalesDate(row));
-      return inRange(d, start, end);
-    });
-  }
+  const filterQuoteSalesByRange = useCallback(
+    (rows) => {
+      if (!activeRange) return rows;
+      const { start, end } = activeRange;
+      return rows.filter((row) => {
+        const d = parseDateLoose(getQuoteSalesDate(row));
+        return inRange(d, start, end);
+      });
+    },
+    [activeRange]
+  );
 
   const coverage = useMemo(() => {
     if (!canAnalyze) return null;
@@ -241,7 +241,7 @@ export function WorkflowDataProvider({ children }) {
       quoteSalesRows: filterQuoteSalesByRange(normalizedAll.quoteSalesAll),
       paidLeadRows: filterByRange(normalizedAll.paidLeadsAll, "date"),
     };
-  }, [canAnalyze, normalizedAll, activeRange]);
+  }, [canAnalyze, filterByRange, filterQuoteSalesByRange, normalizedAll]);
 
   const metrics = useMemo(() => {
     if (!filteredRows) return null;
@@ -349,7 +349,6 @@ export function WorkflowDataProvider({ children }) {
     resetWorkflowData,
     kpiGoals,
     setKpiGoals,
-    kpiGoalsLoaded,
     updateGoal,
   };
 
@@ -358,12 +357,4 @@ export function WorkflowDataProvider({ children }) {
       {children}
     </WorkflowDataContext.Provider>
   );
-}
-
-export function useWorkflowData() {
-  const context = useContext(WorkflowDataContext);
-  if (!context) {
-    throw new Error("useWorkflowData must be used within WorkflowDataProvider");
-  }
-  return context;
 }

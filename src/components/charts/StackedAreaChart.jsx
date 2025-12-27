@@ -37,8 +37,8 @@ function StackedAreaTooltip({ active, payload, label }) {
 }
 
 export default function StackedAreaChart({ series, height = 240 }) {
-  const buckets = series?.buckets || [];
-  const agents = series?.agents || [];
+  const buckets = useMemo(() => series?.buckets || [], [series]);
+  const agents = useMemo(() => series?.agents || [], [series]);
   const isEmpty = buckets.length === 0 || agents.length === 0;
 
   const chartData = useMemo(() => {

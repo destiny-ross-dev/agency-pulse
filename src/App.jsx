@@ -19,7 +19,8 @@ import DataImport from "./routes/DataImport";
 import MapColumns from "./routes/MapColumns";
 import Dashboard from "./routes/Dashboard";
 import Agents from "./routes/Agents";
-import { WorkflowDataProvider, useWorkflowData } from "./context/WorkflowData";
+import { WorkflowDataProvider } from "./context/WorkflowData";
+import { useWorkflowData } from "./context/useWorkflowData";
 
 const stepPaths = {
   1: "/import-data",
