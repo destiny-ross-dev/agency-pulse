@@ -236,7 +236,7 @@ export default function Agents({ agentInsights }) {
             </div>
           </div>
 
-          <div style={{ marginTop: 24 }}>
+          <div style={{ marginTop: 24, marginBottom: 24 }}>
             <SectionTitle
               icon={<PersonIcon />}
               title={
@@ -253,7 +253,10 @@ export default function Agents({ agentInsights }) {
               </div>
             ) : (
               <>
-                <div className="kpi-grid kpi-grid--agent" style={{ marginTop: 12 }}>
+                <div
+                  className="kpi-grid kpi-grid--agent"
+                  style={{ marginTop: 12 }}
+                >
                   <div className="kpi">
                     <div className="kpi-title">Dials</div>
                     <div className="kpi-value">

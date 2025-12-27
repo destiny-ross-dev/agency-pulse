@@ -9,7 +9,7 @@ import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
 import { clampNum } from "./lib/formatHelpers";
 
 import TopBar from "./components/layout/TopBar";
-import DateRangeFilter from "./components/filters/DateRangeFilter";
+import DateRangeFilter from "./components/common/DateRangeFilter";
 import DataImport from "./routes/DataImport";
 import MapColumns from "./routes/MapColumns";
 import Dashboard from "./routes/Dashboard";
