@@ -55,8 +55,12 @@ select {
 
 .container {
   max-width: var(--maxw);
-  margin: 20px auto;
+  margin: 22px auto 0;
   /* padding: 32px 20px; */
+}
+
+.container:first-of-type {
+  margin: 0 auto;
 }
 
 .topbar {
@@ -716,7 +720,6 @@ tbody tr:hover {
   gap: 12px;
   align-items: center;
   justify-content: space-between;
-  margin-top: 14px;
   padding: 14px;
   border-radius: var(--r-2xl);
   border: 1px solid var(--border);

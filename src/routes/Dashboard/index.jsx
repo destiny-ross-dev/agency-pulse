@@ -38,25 +38,24 @@ export default function Dashboard({
   onStartOver,
 }) {
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: 2 }}>
+      <DataHealthPanel
+        health={health}
+        open={healthOpen}
+        onToggle={onToggleHealth}
+      />
+
+      <GoalsPanel
+        open={goalsOpen}
+        onToggle={onToggleGoals}
+        goals={kpiGoals}
+        updateGoal={updateGoal}
+      />
       <Card pad>
         <SectionTitle
           icon={<PulseIcon />}
           title="Core Metrics"
           subtitle="Computed from the mapped files (now filterable by date range)."
-        />
-
-        <DataHealthPanel
-          health={health}
-          open={healthOpen}
-          onToggle={onToggleHealth}
-        />
-
-        <GoalsPanel
-          open={goalsOpen}
-          onToggle={onToggleGoals}
-          goals={kpiGoals}
-          updateGoal={updateGoal}
         />
 
         <AgencyKPIs
