@@ -1,6 +1,8 @@
 // src/components/health/DataHealthPanel.jsx
 import React from "react";
 import HealthItem from "./HealthItem";
+import SectionTitle from "../common/SectionTitle";
+import { DataHealthIcon } from "../common/icons";
 
 /**
  * DataHealthPanel
@@ -40,13 +42,12 @@ export default function DataHealthPanel({ health, open, onToggle }) {
   return (
     <div className="health">
       <div className="health-head">
-        <div>
-          <p className="health-title">Data Health &amp; Integrity</p>
-          <p className="health-sub">
-            Quick checks to catch missing fields, invalid dates, and mismatched
-            paid sources.
-          </p>
-        </div>
+        <SectionTitle
+          icon={<DataHealthIcon />}
+          title="Data Health &amp; Integrity"
+          subtitle="Quick checks to catch missing fields, invalid dates, and mismatched
+            paid sources."
+        ></SectionTitle>
 
         <button
           type="button"

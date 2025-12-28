@@ -1,15 +1,16 @@
+import { GoalsIcon } from "../common/icons";
+import SectionTitle from "../common/SectionTitle";
 import KPIGoals from "./KPIGoals";
 
 export default function GoalsPanel({ open, onToggle, goals, updateGoal }) {
   return (
     <div className="goals">
       <div className="goals-head">
-        <div>
-          <p className="goals-title">Goals</p>
-          <p className="goals-sub">
-            Track target benchmarks and plan future performance goals.
-          </p>
-        </div>
+        <SectionTitle
+          icon={<GoalsIcon />}
+          title="Goals"
+          subtitle=" Track target benchmarks and plan future performance goals."
+        />
 
         <button
           type="button"
