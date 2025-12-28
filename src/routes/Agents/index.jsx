@@ -17,6 +17,16 @@ import { money, pct } from "../../lib/formatHelpers";
 export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
   const [selectedAgent, setSelectedAgent] = useState("");
+  const [quoteFilters, setQuoteFilters] = useState({
+    lob: "",
+    policyType: "",
+    businessType: "",
+  });
+  const [issuedFilters, setIssuedFilters] = useState({
+    lob: "",
+    policyType: "",
+    businessType: "",
+  });
   const {
     canAnalyze,
     filteredRows,
@@ -61,6 +71,39 @@ export default function Agents({ agentInsights }) {
     return money(premium);
   }
 
+  function collectOptions(rows, key) {
+    const values = new Set();
+    rows.forEach((row) => {
+      const value = String(row?.[key] || "").trim();
+      if (value) values.add(value);
+    });
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
+  }
+
+  function applyQuoteFilters(rows, filters) {
+    return rows.filter((row) => {
+      if (
+        filters.lob &&
+        String(row?.line_of_business || "").trim() !== filters.lob
+      ) {
+        return false;
+      }
+      if (
+        filters.policyType &&
+        String(row?.policy_type || "").trim() !== filters.policyType
+      ) {
+        return false;
+      }
+      if (
+        filters.businessType &&
+        String(row?.business_type || "").trim() !== filters.businessType
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }
+
   const selectedQuoteSalesRows = activeSelectedAgent
     ? quoteSalesRows.filter(
         (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
@@ -72,6 +115,48 @@ export default function Agents({ agentInsights }) {
   );
   const issuedRows = selectedQuoteSalesRows.filter(
     (row) => String(row?.status || "").toLowerCase() === "issued"
+  );
+  const quoteLobOptions = useMemo(
+    () => collectOptions(quotedRows, "line_of_business"),
+    [quotedRows]
+  );
+  const quotePolicyTypeOptions = useMemo(() => {
+    const rows = quoteFilters.lob
+      ? quotedRows.filter(
+          (row) =>
+            String(row?.line_of_business || "").trim() === quoteFilters.lob
+        )
+      : quotedRows;
+    return collectOptions(rows, "policy_type");
+  }, [quotedRows, quoteFilters.lob]);
+  const quoteBusinessTypeOptions = useMemo(
+    () => collectOptions(quotedRows, "business_type"),
+    [quotedRows]
+  );
+  const issuedLobOptions = useMemo(
+    () => collectOptions(issuedRows, "line_of_business"),
+    [issuedRows]
+  );
+  const issuedPolicyTypeOptions = useMemo(() => {
+    const rows = issuedFilters.lob
+      ? issuedRows.filter(
+          (row) =>
+            String(row?.line_of_business || "").trim() === issuedFilters.lob
+        )
+      : issuedRows;
+    return collectOptions(rows, "policy_type");
+  }, [issuedRows, issuedFilters.lob]);
+  const issuedBusinessTypeOptions = useMemo(
+    () => collectOptions(issuedRows, "business_type"),
+    [issuedRows]
+  );
+  const filteredQuotedRows = useMemo(
+    () => applyQuoteFilters(quotedRows, quoteFilters),
+    [quotedRows, quoteFilters]
+  );
+  const filteredIssuedRows = useMemo(
+    () => applyQuoteFilters(issuedRows, issuedFilters),
+    [issuedRows, issuedFilters]
   );
   const contactRateInsight = useMemo(() => {
     if (!selectedInsights) return null;
@@ -464,15 +549,68 @@ export default function Agents({ agentInsights }) {
                   subtitle="Quote activity for the selected agent."
                 />
                 <div className="table-card" style={{ marginTop: 12 }}>
-                  <div className="table-toolbar">
+                  <div className="table-toolbar table-toolbar--filters">
                     <div className="toolbar-left">
                       <div>
                         <div className="toolbar-title">Quotes Log</div>
                         <div className="small">
-                          {quotedRows.length.toLocaleString()} quotes in the
-                          selected range.
+                          {filteredQuotedRows.length.toLocaleString()} quotes in
+                          the selected range.
                         </div>
                       </div>
+                    </div>
+                    <div className="toolbar-filters">
+                      <select
+                        className="select table-filter"
+                        value={quoteFilters.lob}
+                        onChange={(e) =>
+                          setQuoteFilters((prev) => ({
+                            ...prev,
+                            lob: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All LOB</option>
+                        {quoteLobOptions.map((lob) => (
+                          <option key={lob} value={lob}>
+                            {lob}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select table-filter"
+                        value={quoteFilters.policyType}
+                        onChange={(e) =>
+                          setQuoteFilters((prev) => ({
+                            ...prev,
+                            policyType: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All Policy Types</option>
+                        {quotePolicyTypeOptions.map((policyType) => (
+                          <option key={policyType} value={policyType}>
+                            {policyType}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select table-filter"
+                        value={quoteFilters.businessType}
+                        onChange={(e) =>
+                          setQuoteFilters((prev) => ({
+                            ...prev,
+                            businessType: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All Business Types</option>
+                        {quoteBusinessTypeOptions.map((businessType) => (
+                          <option key={businessType} value={businessType}>
+                            {businessType}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -489,7 +627,7 @@ export default function Agents({ agentInsights }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {quotedRows.map((row, index) => (
+                        {filteredQuotedRows.map((row, index) => (
                           <tr key={`${row?.agent_name}-quoted-${index}`}>
                             <td>{formatDate(row?.date)}</td>
                             <td>{row?.policyholder || "—"}</td>
@@ -501,7 +639,7 @@ export default function Agents({ agentInsights }) {
                             </td>
                           </tr>
                         ))}
-                        {quotedRows.length === 0 ? (
+                        {filteredQuotedRows.length === 0 ? (
                           <tr>
                             <td
                               colSpan={7}
@@ -526,15 +664,68 @@ export default function Agents({ agentInsights }) {
                   subtitle="Issued policies for the selected agent."
                 />
                 <div className="table-card" style={{ marginTop: 12 }}>
-                  <div className="table-toolbar">
+                  <div className="table-toolbar table-toolbar--filters">
                     <div className="toolbar-left">
                       <div>
                         <div className="toolbar-title">Issued Policies</div>
                         <div className="small">
-                          {issuedRows.length.toLocaleString()} issued policies
-                          in the selected range.
+                          {filteredIssuedRows.length.toLocaleString()} issued
+                          policies in the selected range.
                         </div>
                       </div>
+                    </div>
+                    <div className="toolbar-filters">
+                      <select
+                        className="select table-filter"
+                        value={issuedFilters.lob}
+                        onChange={(e) =>
+                          setIssuedFilters((prev) => ({
+                            ...prev,
+                            lob: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All LOB</option>
+                        {issuedLobOptions.map((lob) => (
+                          <option key={lob} value={lob}>
+                            {lob}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select table-filter"
+                        value={issuedFilters.policyType}
+                        onChange={(e) =>
+                          setIssuedFilters((prev) => ({
+                            ...prev,
+                            policyType: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All Policy Types</option>
+                        {issuedPolicyTypeOptions.map((policyType) => (
+                          <option key={policyType} value={policyType}>
+                            {policyType}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select table-filter"
+                        value={issuedFilters.businessType}
+                        onChange={(e) =>
+                          setIssuedFilters((prev) => ({
+                            ...prev,
+                            businessType: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">All Business Types</option>
+                        {issuedBusinessTypeOptions.map((businessType) => (
+                          <option key={businessType} value={businessType}>
+                            {businessType}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -553,7 +744,7 @@ export default function Agents({ agentInsights }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {issuedRows.map((row, index) => {
+                        {filteredIssuedRows.map((row, index) => {
                           console.log(row);
                           return (
                             <tr key={`${row?.agent_name}-issued-${index}`}>
@@ -572,7 +763,7 @@ export default function Agents({ agentInsights }) {
                             </tr>
                           );
                         })}
-                        {issuedRows.length === 0 ? (
+                        {filteredIssuedRows.length === 0 ? (
                           <tr>
                             <td
                               colSpan={7}

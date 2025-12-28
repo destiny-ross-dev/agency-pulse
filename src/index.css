@@ -196,6 +196,7 @@ select {
 
 .card.pad {
   padding: 28px;
+  margin: 18px 0;
 }
 
 .stacked-area {
@@ -1064,6 +1065,10 @@ tbody tr:hover {
   background: #f8fafc;
 }
 
+.table-toolbar--filters {
+  align-items: flex-start;
+}
+
 .funnel-select {
   width: 260px;
 }
@@ -1073,6 +1078,20 @@ tbody tr:hover {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+}
+
+.toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.table-filter {
+  width: 170px;
+  min-width: 140px;
+  padding: 8px 10px;
+  font-size: 12px;
 }
 
 .toolbar-title {
