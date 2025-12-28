@@ -1435,22 +1435,6 @@ tbody tr:hover {
   border-bottom: none;
 }
 
-.funnel-table tbody tr:first-child td:first-child {
-  border-top-left-radius: 12px;
-}
-
-.funnel-table tbody tr:first-child td:last-child {
-  border-top-right-radius: 12px;
-}
-
-.funnel-table tbody tr:last-child td:first-child {
-  border-bottom-left-radius: 12px;
-}
-
-.funnel-table tbody tr:last-child td:last-child {
-  border-bottom-right-radius: 12px;
-}
-
 @media (max-width: 720px) {
   .container {
     padding: 22px 16px 40px;
