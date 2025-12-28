@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import Card from "../../components/common/Card";
 import SectionTitle from "../../components/common/SectionTitle";
 import { PulseIcon } from "../../components/common/icons";
@@ -138,7 +140,14 @@ export default function Dashboard({
               <tbody>
                 {agentRows.map((agent) => (
                   <tr key={agent.agent}>
-                    <td style={{ fontWeight: 900 }}>{agent.agent}</td>
+                    <td style={{ fontWeight: 900 }}>
+                      <Link
+                        className="agent-link"
+                        to={`/agents?agent=${encodeURIComponent(agent.agent)}`}
+                      >
+                        {agent.agent}
+                      </Link>
+                    </td>
 
                     {agentView === "totals" ? (
                       <>

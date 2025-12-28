@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import Card from "../../components/common/Card";
 import SectionTitle from "../../components/common/SectionTitle";
@@ -47,6 +47,7 @@ function applyQuoteFilters(rows, filters) {
 }
 
 export default function Agents({ agentInsights }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [agentView, setAgentView] = useState("totals");
   const [selectedAgent, setSelectedAgent] = useState("");
   const [quoteFilters, setQuoteFilters] = useState({
@@ -72,6 +73,23 @@ export default function Agents({ agentInsights }) {
   const agentRowsByName = new Map(
     agentRows.map((agent) => [agent.agent, agent])
   );
+
+  useEffect(() => {
+    const agentParam = searchParams.get("agent");
+    if (!agentParam) return;
+    const normalized = agentParam.trim();
+    if (!normalized) return;
+    const hasAgent = displayAgents.some(
+      (agent) => agent.agent === normalized
+    );
+    const nextAgent = hasAgent ? normalized : agentParam;
+    setSelectedAgent((prev) => (prev === nextAgent ? prev : nextAgent));
+  }, [searchParams, displayAgents]);
+
+  function handleSelectAgent(agentName) {
+    setSelectedAgent(agentName);
+    setSearchParams(`agent=${encodeURIComponent(agentName)}`);
+  }
 
   const totals = filteredRows
     ? {
@@ -352,7 +370,7 @@ export default function Agents({ agentInsights }) {
                         <td style={{ fontWeight: 900 }}>
                           <button
                             type="button"
-                            onClick={() => setSelectedAgent(agent.agent)}
+                            onClick={() => handleSelectAgent(agent.agent)}
                             style={{
                               background: "none",
                               border: "none",

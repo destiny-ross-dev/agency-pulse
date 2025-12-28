@@ -1085,7 +1085,7 @@ tbody tr:hover {
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 18px 14px;
   border-bottom: 1px solid var(--border);
   background: #f8fafc;
 }
@@ -1158,6 +1158,21 @@ tbody tr:hover {
 
 .table tbody tr:hover {
   background: #f8fafc;
+}
+
+.agent-link {
+  color: var(--blue2);
+  font-weight: 900;
+}
+
+.agent-link:hover {
+  text-decoration: underline;
+}
+
+.agent-link:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .right {
