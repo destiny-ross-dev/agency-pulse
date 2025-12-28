@@ -5,7 +5,10 @@ import { normalizeRows } from "../lib/normalize";
 import { computeCoreMetrics } from "../lib/kpis";
 import { computeDataHealth } from "../lib/dataHealth";
 import { computeAgentInsights, computeAgentMetrics } from "../lib/agentMetrics";
-import { computeIssuedPremiumSeries } from "../lib/issuedPremiumSeries";
+import {
+  computeIssuedCountSeries,
+  computeIssuedPremiumSeries,
+} from "../lib/issuedPremiumSeries";
 import { clampNum } from "../lib/formatHelpers";
 import {
   endOfDay,
@@ -292,6 +295,16 @@ export function WorkflowDataProvider({ children }) {
     });
   }, [filteredRows, activeRange, rangeMode]);
 
+  const issuedPolicySeries = useMemo(() => {
+    if (!filteredRows) return { buckets: [], agents: [], granularity: "month" };
+
+    return computeIssuedCountSeries({
+      quoteSalesRows: filteredRows.quoteSalesRows,
+      rangeMode,
+      activeRange,
+    });
+  }, [filteredRows, activeRange, rangeMode]);
+
   const rangeLabel = useMemo(() => {
     if (rangeMode === "all") return "All Time";
     if (rangeMode === "7d") return "Last 7 days";
@@ -345,6 +358,7 @@ export function WorkflowDataProvider({ children }) {
     allAgentRows,
     agentInsights,
     issuedPremiumSeries,
+    issuedPolicySeries,
     rangeLabel,
     resetWorkflowData,
     kpiGoals,

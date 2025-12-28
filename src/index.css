@@ -642,6 +642,28 @@ tbody tr:hover {
   box-shadow: var(--shadow);
 }
 
+.kpi--selectable {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi--selectable:hover {
+  border-color: #94a3b8;
+}
+
+.kpi--selectable:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.kpi--active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15), var(--shadow);
+}
+
 .kpi-title {
   font-weight: 800;
   font-size: 13px;

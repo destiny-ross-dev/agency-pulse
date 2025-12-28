@@ -122,6 +122,33 @@ export function computeIssuedPremiumSeries({
   rangeMode = "all",
   activeRange = null,
 }) {
+  return computeIssuedSeries({
+    quoteSalesRows,
+    rangeMode,
+    activeRange,
+    valueAccessor: (row) => Number(row?.issued_premium) || 0,
+  });
+}
+
+export function computeIssuedCountSeries({
+  quoteSalesRows = [],
+  rangeMode = "all",
+  activeRange = null,
+}) {
+  return computeIssuedSeries({
+    quoteSalesRows,
+    rangeMode,
+    activeRange,
+    valueAccessor: () => 1,
+  });
+}
+
+function computeIssuedSeries({
+  quoteSalesRows = [],
+  rangeMode = "all",
+  activeRange = null,
+  valueAccessor,
+}) {
   const issuedRows = quoteSalesRows.filter(
     (row) => lower(row?.status) === "issued"
   );
@@ -149,7 +176,8 @@ export function computeIssuedPremiumSeries({
     if (idx < 0 || idx >= buckets.length) continue;
 
     const agent = String(row?.agent_name || "Unknown").trim() || "Unknown";
-    const value = Number(row?.issued_premium) || 0;
+    const rawValue = valueAccessor ? valueAccessor(row) : 0;
+    const value = Number(rawValue);
     if (!Number.isFinite(value)) continue;
 
     totalsByAgent.set(agent, (totalsByAgent.get(agent) || 0) + value);

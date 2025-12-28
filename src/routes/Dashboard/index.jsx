@@ -19,6 +19,9 @@ export default function Dashboard({
   agentView,
   setAgentView,
   issuedPremiumSeries,
+  issuedPolicySeries,
+  kpiChartMode,
+  setKpiChartMode,
   rangeLabel,
   funnelData,
   funnelMode,
@@ -59,6 +62,9 @@ export default function Dashboard({
         <AgencyKPIs
           metrics={metrics}
           issuedPremiumSeries={issuedPremiumSeries}
+          issuedPolicySeries={issuedPolicySeries}
+          chartMode={kpiChartMode}
+          onChartModeChange={setKpiChartMode}
         />
 
         <div className="table-card">

@@ -1,11 +1,25 @@
 import StackedAreaChart from "../charts/StackedAreaChart";
-import { money, pct } from "../../lib/formatHelpers";
+import { formatNumberShort, money, pct } from "../../lib/formatHelpers";
 
-export default function AgencyKPIs({ metrics, issuedPremiumSeries }) {
+export default function AgencyKPIs({
+  metrics,
+  issuedPremiumSeries,
+  issuedPolicySeries,
+  chartMode,
+  onChartModeChange,
+}) {
+  const isPremium = chartMode === "premium";
+  const isPolicies = chartMode === "policies";
+
   return (
     <>
       <div className="kpi-grid" style={{ marginTop: 14 }}>
-        <div className="kpi">
+        <button
+          type="button"
+          className={`kpi kpi--selectable ${isPremium ? "kpi--active" : ""}`}
+          onClick={() => onChartModeChange?.("premium")}
+          aria-pressed={isPremium}
+        >
           <div className="kpi-title">Total Issued Premium</div>
           <div className="kpi-value">
             {metrics ? money(metrics.totalIssuedPremium) : "—"}
@@ -13,15 +27,20 @@ export default function AgencyKPIs({ metrics, issuedPremiumSeries }) {
           <div className="kpi-hint">
             Sum of Issued Premium where Status = Issued.
           </div>
-        </div>
+        </button>
 
-        <div className="kpi">
+        <button
+          type="button"
+          className={`kpi kpi--selectable ${isPolicies ? "kpi--active" : ""}`}
+          onClick={() => onChartModeChange?.("policies")}
+          aria-pressed={isPolicies}
+        >
           <div className="kpi-title">Policies Issued</div>
           <div className="kpi-value">
             {metrics ? metrics.policiesIssued.toLocaleString() : "—"}
           </div>
           <div className="kpi-hint">Count of rows where Status = Issued.</div>
-        </div>
+        </button>
 
         <div className="kpi">
           <div className="kpi-title">Conversion Rate</div>
@@ -40,7 +59,29 @@ export default function AgencyKPIs({ metrics, issuedPremiumSeries }) {
         </div>
       </div>
 
-      <StackedAreaChart series={issuedPremiumSeries} />
+      <StackedAreaChart
+        series={isPolicies ? issuedPolicySeries : issuedPremiumSeries}
+        title={
+          isPolicies ? "Policies Issued by Agent" : "Issued Premium by Agent"
+        }
+        subtitle={
+          isPolicies
+            ? "Stacked policy counts per time period."
+            : "Stacked totals per time period."
+        }
+        emptyMessage={
+          isPolicies
+            ? "No issued policy data available for this date range."
+            : "No issued premium data available for this date range."
+        }
+        formatValue={isPolicies ? formatNumberShort : undefined}
+        formatTooltipValue={
+          isPolicies
+            ? (value) => Number(value || 0).toLocaleString()
+            : undefined
+        }
+        integerTicks={isPolicies}
+      />
     </>
   );
 }

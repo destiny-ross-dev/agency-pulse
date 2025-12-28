@@ -21,25 +21,36 @@ const COLORS = [
   "#14b8a6",
 ];
 
-function StackedAreaTooltip({ active, payload, label }) {
+function StackedAreaTooltip({ active, payload, label, formatValue }) {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
+  const formatter = formatValue || formatMoneyShort;
 
   return (
     <div className="chart-tooltip">
       <div className="tooltip-title">{entry.name}</div>
       <div className="tooltip-label">{label}</div>
       <div className="tooltip-value">
-        {formatMoneyShort(Number(entry.value) || 0)}
+        {formatter(Number(entry.value) || 0)}
       </div>
     </div>
   );
 }
 
-export default function StackedAreaChart({ series, height = 240 }) {
+export default function StackedAreaChart({
+  series,
+  height = 240,
+  title = "Issued Premium by Agent",
+  subtitle = "Stacked totals per time period.",
+  emptyMessage = "No issued premium data available for this date range.",
+  formatValue = formatMoneyShort,
+  formatTooltipValue,
+  integerTicks = false,
+}) {
   const buckets = useMemo(() => series?.buckets || [], [series]);
   const agents = useMemo(() => series?.agents || [], [series]);
   const isEmpty = buckets.length === 0 || agents.length === 0;
+  const tooltipFormatter = formatTooltipValue || formatValue;
 
   const chartData = useMemo(() => {
     return buckets.map((bucket) => ({
@@ -54,22 +65,18 @@ export default function StackedAreaChart({ series, height = 240 }) {
   }, [buckets]);
 
   if (isEmpty) {
-    return (
-      <div className="chart-empty">
-        No issued premium data available for this date range.
-      </div>
-    );
+    return <div className="chart-empty">{emptyMessage}</div>;
   }
 
   return (
     <div className="stacked-area">
       <div className="stacked-area-header">
         <div>
-          <div className="chart-title">Issued Premium by Agent</div>
-          <div className="chart-subtitle">Stacked totals per time period.</div>
+          <div className="chart-title">{title}</div>
+          <div className="chart-subtitle">{subtitle}</div>
         </div>
         <div className="chart-scale">
-          <span>Max:</span> {formatMoneyShort(maxTotal)}
+          <span>Max:</span> {formatValue(maxTotal)}
         </div>
       </div>
       <div className="stacked-area-canvas">
@@ -85,13 +92,14 @@ export default function StackedAreaChart({ series, height = 240 }) {
               tick={{ fontSize: 11, fill: "#64748b" }}
             />
             <YAxis
-              tickFormatter={formatMoneyShort}
+              tickFormatter={formatValue}
               tick={{ fontSize: 11, fill: "#94a3b8" }}
               width={60}
+              allowDecimals={!integerTicks}
             />
             <Tooltip
-              content={<StackedAreaTooltip />}
-              formatter={(value) => formatMoneyShort(Number(value) || 0)}
+              content={<StackedAreaTooltip formatValue={tooltipFormatter} />}
+              formatter={(value) => tooltipFormatter(Number(value) || 0)}
               labelFormatter={(label) => label}
               shared={false}
             />

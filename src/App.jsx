@@ -58,9 +58,10 @@ function StepWorkflow({ step }) {
   const location = useLocation();
   const [busyKey, setBusyKey] = useState("");
   const [error, setError] = useState("");
-  const [healthOpen, setHealthOpen] = useState(true);
-  const [goalsOpen, setGoalsOpen] = useState(true);
+  const [healthOpen, setHealthOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [agentView, setAgentView] = useState("totals");
+  const [kpiChartMode, setKpiChartMode] = useState("premium");
 
   const [roiSort, setRoiSort] = useState("premiumPerSpend");
   const [roiScope, setRoiScope] = useState("paid");
@@ -80,6 +81,7 @@ function StepWorkflow({ step }) {
     health,
     agentRows,
     issuedPremiumSeries,
+    issuedPolicySeries,
     rangeLabel,
     resetWorkflowData,
     kpiGoals,
@@ -92,8 +94,8 @@ function StepWorkflow({ step }) {
     guardKey === "uploads"
       ? !allUploaded
       : guardKey === "mappings"
-        ? !canAnalyze
-        : false;
+      ? !canAnalyze
+      : false;
   const displayError = error || (guardInvalid ? guardError : "");
 
   async function handlePickFile(datasetKey) {
@@ -306,6 +308,9 @@ function StepWorkflow({ step }) {
             agentView={agentView}
             setAgentView={setAgentView}
             issuedPremiumSeries={issuedPremiumSeries}
+            issuedPolicySeries={issuedPolicySeries}
+            kpiChartMode={kpiChartMode}
+            setKpiChartMode={setKpiChartMode}
             rangeLabel={rangeLabel}
             funnelData={funnelData}
             funnelMode={funnelMode}
