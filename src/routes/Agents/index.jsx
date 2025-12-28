@@ -14,6 +14,39 @@ import { useWorkflowData } from "../../context/useWorkflowData";
 import { formatYMD, parseDateLoose } from "../../lib/dates";
 import { money, pct } from "../../lib/formatHelpers";
 
+function collectOptions(rows, key) {
+  const values = new Set();
+  rows.forEach((row) => {
+    const value = String(row?.[key] || "").trim();
+    if (value) values.add(value);
+  });
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+}
+
+function applyQuoteFilters(rows, filters) {
+  return rows.filter((row) => {
+    if (
+      filters.lob &&
+      String(row?.line_of_business || "").trim() !== filters.lob
+    ) {
+      return false;
+    }
+    if (
+      filters.policyType &&
+      String(row?.policy_type || "").trim() !== filters.policyType
+    ) {
+      return false;
+    }
+    if (
+      filters.businessType &&
+      String(row?.business_type || "").trim() !== filters.businessType
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
 export default function Agents({ agentInsights }) {
   const [agentView, setAgentView] = useState("totals");
   const [selectedAgent, setSelectedAgent] = useState("");
@@ -71,38 +104,6 @@ export default function Agents({ agentInsights }) {
     return money(premium);
   }
 
-  function collectOptions(rows, key) {
-    const values = new Set();
-    rows.forEach((row) => {
-      const value = String(row?.[key] || "").trim();
-      if (value) values.add(value);
-    });
-    return Array.from(values).sort((a, b) => a.localeCompare(b));
-  }
-
-  function applyQuoteFilters(rows, filters) {
-    return rows.filter((row) => {
-      if (
-        filters.lob &&
-        String(row?.line_of_business || "").trim() !== filters.lob
-      ) {
-        return false;
-      }
-      if (
-        filters.policyType &&
-        String(row?.policy_type || "").trim() !== filters.policyType
-      ) {
-        return false;
-      }
-      if (
-        filters.businessType &&
-        String(row?.business_type || "").trim() !== filters.businessType
-      ) {
-        return false;
-      }
-      return true;
-    });
-  }
 
   const selectedQuoteSalesRows = activeSelectedAgent
     ? quoteSalesRows.filter(
@@ -662,6 +663,7 @@ export default function Agents({ agentInsights }) {
                   icon={<SalesIcon />}
                   title="Issued Policies"
                   subtitle="Issued policies for the selected agent."
+                  style={{ marginTop: 24 }}
                 />
                 <div className="table-card" style={{ marginTop: 12 }}>
                   <div className="table-toolbar table-toolbar--filters">

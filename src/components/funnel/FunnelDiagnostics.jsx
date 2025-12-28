@@ -2,6 +2,63 @@
 import React, { useMemo } from "react";
 import { pct } from "../../lib/formatHelpers";
 
+function targetPctForTransition(t, goals) {
+  const from = String(t?.from || "")
+    .trim()
+    .toLowerCase();
+  const to = String(t?.to || "")
+    .trim()
+    .toLowerCase();
+
+  if (from === "dials" && to === "contacts")
+    return Number(goals.contactRateTargetPct || 0);
+
+  if (from === "contacts" && to === "quotes")
+    return Number(goals.quoteRateTargetPct || 0);
+
+  // Support both "Issued" and "Sales" naming (future-proof)
+  if (from === "quotes" && (to === "issued" || to === "sales"))
+    return Number(goals.issueRateTargetPct || 0);
+
+  return 0;
+}
+
+function rowClassForTransition(t, goals) {
+  const actualPct = Number(t?.rate || 0) * 100; // rate is 0-1
+  const target = Number(targetPctForTransition(t, goals) || 0);
+
+  // If target is 0, don't color (avoids confusing all-green when unset)
+  if (!target) return "";
+
+  if (actualPct >= target) return "funnel-row-good";
+  if (actualPct >= 0.75 * target) return "funnel-row-warn";
+  return "funnel-row-bad";
+}
+
+function worstOffTargetTransition(transitions, goals) {
+  const list = Array.isArray(transitions) ? transitions : [];
+  // Find transition furthest below its target (largest (target-actual) where actual<target)
+  let worst = null;
+  let worstGap = 0;
+
+  for (const t of list) {
+    if (!t || (t.fromCount || 0) <= 0) continue;
+
+    const target = Number(targetPctForTransition(t, goals) || 0);
+    if (!target) continue;
+
+    const actual = Number(t.rate || 0) * 100;
+    const gap = target - actual;
+
+    if (gap > worstGap) {
+      worstGap = gap;
+      worst = t;
+    }
+  }
+
+  return worst;
+}
+
 /**
  * FunnelDiagnostics
  * - Renders KPI Goals (3 funnel targets + placeholder for future goal sections)
@@ -31,62 +88,6 @@ export default function FunnelDiagnostics({
   // Goals state should live in App.jsx (or a store) and be passed in
   goals,
 }) {
-  function targetPctForTransition(t) {
-    const from = String(t?.from || "")
-      .trim()
-      .toLowerCase();
-    const to = String(t?.to || "")
-      .trim()
-      .toLowerCase();
-
-    if (from === "dials" && to === "contacts")
-      return Number(goals.contactRateTargetPct || 0);
-
-    if (from === "contacts" && to === "quotes")
-      return Number(goals.quoteRateTargetPct || 0);
-
-    // Support both "Issued" and "Sales" naming (future-proof)
-    if (from === "quotes" && (to === "issued" || to === "sales"))
-      return Number(goals.issueRateTargetPct || 0);
-
-    return 0;
-  }
-
-  function rowClassForTransition(t) {
-    const actualPct = Number(t?.rate || 0) * 100; // rate is 0-1
-    const target = Number(targetPctForTransition(t) || 0);
-
-    // If target is 0, don't color (avoids confusing all-green when unset)
-    if (!target) return "";
-
-    if (actualPct >= target) return "funnel-row-good";
-    if (actualPct >= 0.75 * target) return "funnel-row-warn";
-    return "funnel-row-bad";
-  }
-
-  function worstOffTargetTransition(transitions) {
-    const list = Array.isArray(transitions) ? transitions : [];
-    // Find transition furthest below its target (largest (target-actual) where actual<target)
-    let worst = null;
-    let worstGap = 0;
-
-    for (const t of list) {
-      if (!t || (t.fromCount || 0) <= 0) continue;
-
-      const target = Number(targetPctForTransition(t) || 0);
-      if (!target) continue;
-
-      const actual = Number(t.rate || 0) * 100;
-      const gap = target - actual;
-
-      if (gap > worstGap) {
-        worstGap = gap;
-        worst = t;
-      }
-    }
-
-    return worst;
-  }
 
   const activeFunnel = useMemo(() => {
     if (!funnelData) return null;
@@ -95,8 +96,8 @@ export default function FunnelDiagnostics({
 
   const worst = useMemo(() => {
     if (!activeFunnel) return null;
-    return worstOffTargetTransition(activeFunnel.transitions);
-  }, [activeFunnel]); // eslint-disable-line react-hooks/exhaustive-deps
+    return worstOffTargetTransition(activeFunnel.transitions, goals);
+  }, [activeFunnel, goals]);
 
   if (!funnelData) return null;
 
@@ -154,7 +155,7 @@ export default function FunnelDiagnostics({
                 title="Furthest below its target goal"
               >
                 Most off-target: {worst.from} → {worst.to} ({pct(worst.rate)} vs
-                target {targetPctForTransition(worst)}%)
+                target {targetPctForTransition(worst, goals)}%)
               </span>
             ) : null}
           </div>
@@ -184,7 +185,7 @@ export default function FunnelDiagnostics({
                 {(activeFunnel.transitions || []).map((t) => (
                   <tr
                     key={`${t.from}->${t.to}`}
-                    className={rowClassForTransition(t)}
+                    className={rowClassForTransition(t, goals)}
                   >
                     <td style={{ fontWeight: 900 }}>
                       {t.from} → {t.to}
@@ -196,7 +197,7 @@ export default function FunnelDiagnostics({
                       {Math.round(t.toCount || 0).toLocaleString()}
                     </td>
                     <td className="right">{pct(t.rate)}</td>
-                    <td className="right">{targetPctForTransition(t)}%</td>
+                    <td className="right">{targetPctForTransition(t, goals)}%</td>
                     <td className="right">{pct(t.drop)}</td>
                   </tr>
                 ))}
