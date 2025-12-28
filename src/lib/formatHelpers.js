@@ -1,3 +1,5 @@
+import { parseDateLoose } from "./dates";
+
 export function money(n) {
   const x = Number(n || 0);
   return x.toLocaleString(undefined, {
@@ -44,4 +46,17 @@ export function clampNum(v, min, max) {
   const n = Number(v);
   if (Number.isNaN(n)) return min;
   return Math.min(max, Math.max(min, n));
+}
+
+const readableDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+export function formatReadableDate(value) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : parseDateLoose(value);
+  if (!date || Number.isNaN(date.getTime())) return "";
+  return readableDateFormatter.format(date);
 }

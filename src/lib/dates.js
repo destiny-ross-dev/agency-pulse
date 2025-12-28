@@ -92,6 +92,21 @@ export function toInputDate(d) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+export function parseInputDate(value) {
+  const s = safeStr(value);
+  if (!s) return null;
+
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+
+  const yyyy = Number(m[1]);
+  const mm = Number(m[2]);
+  const dd = Number(m[3]);
+  const d = new Date(yyyy, mm - 1, dd);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
 // src/lib/dates.js (append)
 
 export function formatYMD(d) {

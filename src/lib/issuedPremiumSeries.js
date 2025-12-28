@@ -1,3 +1,4 @@
+import { formatReadableDate } from "./formatHelpers";
 import { formatYMD, inRange, parseDateLoose, startOfDay } from "./dates";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
@@ -65,7 +66,11 @@ function buildBuckets(start, end, granularity) {
     const endDay = startOfDay(end);
     while (cursor.getTime() <= endDay.getTime()) {
       const key = formatYMD(cursor);
-      buckets.push({ key, label: key, start: new Date(cursor) });
+      buckets.push({
+        key,
+        label: formatReadableDate(cursor),
+        start: new Date(cursor),
+      });
       cursor = new Date(cursor.getTime() + MS_DAY);
     }
     return buckets;
@@ -78,7 +83,7 @@ function buildBuckets(start, end, granularity) {
       const key = formatYMD(cursor);
       buckets.push({
         key,
-        label: `Week of ${key}`,
+        label: `Week of ${formatReadableDate(cursor)}`,
         start: new Date(cursor),
       });
       cursor = new Date(cursor.getTime() + MS_DAY * 7);

@@ -11,8 +11,7 @@ import {
   SalesIcon,
 } from "../../components/common/icons";
 import { useWorkflowData } from "../../context/useWorkflowData";
-import { formatYMD, parseDateLoose } from "../../lib/dates";
-import { money, pct } from "../../lib/formatHelpers";
+import { money, pct, formatReadableDate } from "../../lib/formatHelpers";
 
 function collectOptions(rows, key) {
   const values = new Set();
@@ -94,8 +93,8 @@ export default function Agents({ agentInsights }) {
   const pitchRateTarget = (kpiGoals?.quoteRateTargetPct ?? 30) / 100;
 
   function formatDate(value) {
-    const parsed = parseDateLoose(value);
-    return parsed ? formatYMD(parsed) : "—";
+    const formatted = formatReadableDate(value);
+    return formatted || "—";
   }
 
   function formatPremium(value) {

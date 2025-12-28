@@ -720,7 +720,7 @@ tbody tr:hover {
   gap: 12px;
   align-items: center;
   justify-content: space-between;
-  padding: 14px;
+  padding: 14px 28px;
   border-radius: var(--r-2xl);
   border: 1px solid var(--border);
   background: #f8fafc;

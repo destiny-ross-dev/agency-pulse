@@ -9,15 +9,15 @@ import {
   computeIssuedCountSeries,
   computeIssuedPremiumSeries,
 } from "../lib/issuedPremiumSeries";
-import { clampNum } from "../lib/formatHelpers";
+import { clampNum, formatReadableDate } from "../lib/formatHelpers";
 import {
   endOfDay,
   findCoverage,
   inRange,
   makePresetRange,
+  parseInputDate,
   parseDateLoose,
   startOfDay,
-  toInputDate,
 } from "../lib/dates";
 import { WorkflowDataContext } from "./WorkflowDataContext";
 
@@ -117,8 +117,10 @@ export function WorkflowDataProvider({ children }) {
 
   const activeRange = useMemo(() => {
     if (rangeMode === "custom") {
-      const s = customStart ? startOfDay(new Date(customStart)) : null;
-      const e = customEnd ? endOfDay(new Date(customEnd)) : null;
+      const startDate = customStart ? parseInputDate(customStart) : null;
+      const endDate = customEnd ? parseInputDate(customEnd) : null;
+      const s = startDate ? startOfDay(startDate) : null;
+      const e = endDate ? endOfDay(endDate) : null;
       if (s && e) return { start: s, end: e };
       return null;
     }
@@ -312,7 +314,7 @@ export function WorkflowDataProvider({ children }) {
     if (rangeMode === "90d") return "Last 90 days";
     if (rangeMode === "365d") return "Last year";
     if (rangeMode === "custom" && activeRange)
-      return `${toInputDate(activeRange.start)} → ${toInputDate(
+      return `${formatReadableDate(activeRange.start)} → ${formatReadableDate(
         activeRange.end
       )}`;
     if (rangeMode === "custom") return "Custom";

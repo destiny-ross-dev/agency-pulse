@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 
 import { useWorkflowData } from "../../context/useWorkflowData";
-import { formatYMD } from "../../lib/dates";
+import { formatReadableDate } from "../../lib/formatHelpers";
 import SegButton from "../common/SegButton";
 
 export default function DateRangeFilter() {
@@ -99,7 +99,8 @@ export default function DateRangeFilter() {
                 <span className="dot" />
                 <span className="label">Coverage:</span>
                 <span className="range">
-                  {formatYMD(coverage.start)} → {formatYMD(coverage.end)}
+                  {formatReadableDate(coverage.start)} →{" "}
+                  {formatReadableDate(coverage.end)}
                 </span>
               </div>
             ) : (
