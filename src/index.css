@@ -27,7 +27,6 @@
   --pad: 24px;
 
   --maxw: 1100px;
-  --topbar-offset: 90px;
 }
 
 * {
@@ -58,13 +57,6 @@ select {
   max-width: var(--maxw);
   margin: 20px auto;
   /* padding: 32px 20px; */
-}
-
-.date-range-sticky {
-  position: sticky;
-  top: var(--topbar-offset);
-  z-index: 15;
-  background: var(--bg);
 }
 
 .topbar {
@@ -726,7 +718,7 @@ tbody tr:hover {
   justify-content: space-between;
   margin-top: 14px;
   padding: 14px;
-  /* border-radius: var(--r-2xl); */
+  border-radius: var(--r-2xl);
   border: 1px solid var(--border);
   background: #f8fafc;
 }
@@ -1466,10 +1458,6 @@ tbody tr:hover {
 }
 
 @media (max-width: 720px) {
-  :root {
-    --topbar-offset: 112px;
-  }
-
   .container {
     padding: 22px 16px 40px;
   }
