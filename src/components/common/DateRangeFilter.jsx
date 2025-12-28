@@ -26,8 +26,9 @@ export default function DateRangeFilter() {
   }
 
   return (
-    <div className="container">
-      <div className="filters">
+    <div className="date-range-sticky">
+      <div className="container">
+        <div className="filters">
         <div className="filters-left">
           <span className="filters-title">Date Range</span>
 
@@ -110,6 +111,7 @@ export default function DateRangeFilter() {
             <span>Showing:</span>
             <span className="filters-range">{rangeLabel}</span>
           </div>
+        </div>
         </div>
       </div>
     </div>
