@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import Card from "../../components/common/Card";
@@ -13,6 +13,8 @@ import {
 import { useWorkflowData } from "../../context/useWorkflowData";
 import { money, pct, ratio, formatReadableDate } from "../../lib/formatHelpers";
 import KPICard from "../../components/kpis/KPICard";
+import ActivityFunnelChart from "../../components/charts/ActivityFunnelChart";
+import { computeActivityFunnelSeries } from "../../lib/activityFunnelSeries";
 
 function collectOptions(rows, key) {
   const values = new Set();
@@ -50,7 +52,6 @@ function applyQuoteFilters(rows, filters) {
 export default function Agents({ agentInsights }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [agentView, setAgentView] = useState("totals");
-  const [selectedAgent, setSelectedAgent] = useState("");
   const [quoteFilters, setQuoteFilters] = useState({
     lob: "",
     policyType: "",
@@ -68,6 +69,8 @@ export default function Agents({ agentInsights }) {
     allAgentRows,
     rangeLabel,
     kpiGoals,
+    rangeMode,
+    activeRange,
   } = useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
   const displayAgents = allAgentRows.length > 0 ? allAgentRows : agentRows;
@@ -75,18 +78,15 @@ export default function Agents({ agentInsights }) {
     agentRows.map((agent) => [agent.agent, agent])
   );
 
-  useEffect(() => {
-    const agentParam = searchParams.get("agent");
-    if (!agentParam) return;
-    const normalized = agentParam.trim();
-    if (!normalized) return;
+  const selectedAgentParam = searchParams.get("agent") || "";
+  const normalizedSelectedAgent = useMemo(() => {
+    const normalized = selectedAgentParam.trim();
+    if (!normalized) return "";
     const hasAgent = displayAgents.some((agent) => agent.agent === normalized);
-    const nextAgent = hasAgent ? normalized : agentParam;
-    setSelectedAgent((prev) => (prev === nextAgent ? prev : nextAgent));
-  }, [searchParams, displayAgents]);
+    return hasAgent ? normalized : selectedAgentParam;
+  }, [displayAgents, selectedAgentParam]);
 
   function handleSelectAgent(agentName) {
-    setSelectedAgent(agentName);
     setSearchParams(`agent=${encodeURIComponent(agentName)}`);
   }
 
@@ -98,7 +98,8 @@ export default function Agents({ agentInsights }) {
     : null;
 
   const activeSelectedAgent =
-    selectedAgent || (displayAgents.length > 0 ? displayAgents[0].agent : "");
+    normalizedSelectedAgent ||
+    (displayAgents.length > 0 ? displayAgents[0].agent : "");
 
   const selectedInsights = activeSelectedAgent
     ? insightsByAgent[activeSelectedAgent]
@@ -125,6 +126,21 @@ export default function Agents({ agentInsights }) {
         (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
       )
     : [];
+  const selectedActivityRows = useMemo(() => {
+    if (!activeSelectedAgent || !filteredRows?.activityRows) return [];
+    return filteredRows.activityRows.filter(
+      (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
+    );
+  }, [activeSelectedAgent, filteredRows]);
+  const activityFunnelSeries = useMemo(
+    () =>
+      computeActivityFunnelSeries({
+        activityRows: selectedActivityRows,
+        rangeMode,
+        activeRange,
+      }),
+    [activeRange, rangeMode, selectedActivityRows]
+  );
 
   const quotedRows = selectedQuoteSalesRows.filter(
     (row) => String(row?.status || "").toLowerCase() === "quoted"
@@ -465,7 +481,7 @@ export default function Agents({ agentInsights }) {
             <SectionTitle
               icon={<PersonIcon />}
               title={
-                selectedAgent
+                normalizedSelectedAgent
                   ? `Agent Details: ${activeSelectedAgent}`
                   : "Agent Details"
               }
@@ -511,6 +527,9 @@ export default function Agents({ agentInsights }) {
                     }
                     hint="Policies issued."
                   />
+                  <div className="kpi-grid__full">
+                    <ActivityFunnelChart series={activityFunnelSeries} />
+                  </div>
                   <KPICard
                     title="Contact Rate"
                     value={pct(selectedInsights?.kpis?.contactRate || 0)}

@@ -623,6 +623,14 @@ tbody tr:hover {
   gap: 14px;
 }
 
+.kpi-grid__full {
+  grid-column: 1 / -1;
+}
+
+.kpi-grid__full .stacked-area {
+  margin: 0;
+}
+
 .kpi-grid--agent {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 18px;
@@ -1416,6 +1424,7 @@ tbody tr:hover {
 /* Firefox */
 .goal-input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Optional: tighten the KPI Goals layout so each row looks aligned */
