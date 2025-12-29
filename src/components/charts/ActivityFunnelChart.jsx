@@ -66,6 +66,24 @@ export default function ActivityFunnelChart({
       ...bucket.totals,
     }));
   }, [buckets]);
+  const contactMax = useMemo(() => {
+    let max = 0;
+    for (const bucket of buckets) {
+      const value = Number(bucket.totals?.contacts) || 0;
+      if (value > max) max = value;
+    }
+    return max;
+  }, [buckets]);
+  const dialsMax = useMemo(() => {
+    let max = 0;
+    for (const bucket of buckets) {
+      const value = Number(bucket.totals?.dials) || 0;
+      if (value > max) max = value;
+    }
+    return max;
+  }, [buckets]);
+  const contactDomainMax = Math.max(1, Math.ceil(contactMax * 1.25));
+  const dialsOffScale = dialsMax > contactDomainMax;
 
   if (isEmpty) {
     return <div className="chart-empty">{emptyMessage}</div>;
@@ -96,6 +114,8 @@ export default function ActivityFunnelChart({
               tick={{ fontSize: 11, fill: "#94a3b8" }}
               width={60}
               allowDecimals={false}
+              domain={[0, contactDomainMax]}
+              allowDataOverflow
             />
             <Tooltip content={<ActivityFunnelTooltip />} />
             {STAGES.map((stage) => (
@@ -108,6 +128,7 @@ export default function ActivityFunnelChart({
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}
+                strokeOpacity={stage.key === "dials" && dialsOffScale ? 0.35 : 1}
               />
             ))}
           </LineChart>
