@@ -11,7 +11,8 @@ import {
   SalesIcon,
 } from "../../components/common/icons";
 import { useWorkflowData } from "../../context/useWorkflowData";
-import { money, pct, formatReadableDate } from "../../lib/formatHelpers";
+import { money, pct, ratio, formatReadableDate } from "../../lib/formatHelpers";
+import KPICard from "../../components/kpis/KPICard";
 
 function collectOptions(rows, key) {
   const values = new Set();
@@ -79,9 +80,7 @@ export default function Agents({ agentInsights }) {
     if (!agentParam) return;
     const normalized = agentParam.trim();
     if (!normalized) return;
-    const hasAgent = displayAgents.some(
-      (agent) => agent.agent === normalized
-    );
+    const hasAgent = displayAgents.some((agent) => agent.agent === normalized);
     const nextAgent = hasAgent ? normalized : agentParam;
     setSelectedAgent((prev) => (prev === nextAgent ? prev : nextAgent));
   }, [searchParams, displayAgents]);
@@ -120,7 +119,6 @@ export default function Agents({ agentInsights }) {
     if (!Number.isFinite(premium) || premium === 0) return "—";
     return money(premium);
   }
-
 
   const selectedQuoteSalesRows = activeSelectedAgent
     ? quoteSalesRows.filter(
@@ -484,65 +482,82 @@ export default function Agents({ agentInsights }) {
                   className="kpi-grid kpi-grid--agent"
                   style={{ marginTop: 12 }}
                 >
-                  <div className="kpi">
-                    <div className="kpi-title">Dials</div>
-                    <div className="kpi-value">
-                      {selectedInsights?.kpis?.dials?.toLocaleString?.() || "0"}
-                    </div>
-                    <div className="kpi-hint">Total dials logged.</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Contacts</div>
-                    <div className="kpi-value">
-                      {selectedInsights?.kpis?.contacts?.toLocaleString?.() ||
-                        "0"}
-                    </div>
-                    <div className="kpi-hint">Reached contacts.</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Quotes</div>
-                    <div className="kpi-value">
-                      {selectedInsights?.kpis?.quotes?.toLocaleString?.() ||
-                        "0"}
-                    </div>
-                    <div className="kpi-hint">Quotes sent.</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Issued</div>
-                    <div className="kpi-value">
-                      {selectedInsights?.kpis?.issued?.toLocaleString?.() ||
-                        "0"}
-                    </div>
-                    <div className="kpi-hint">Policies issued.</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Contact Rate</div>
-                    <div className="kpi-value">
-                      {pct(selectedInsights?.kpis?.contactRate || 0)}
-                    </div>
-                    <div className="kpi-hint">Contacts per dial.</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Pitch Rate</div>
-                    <div className="kpi-value">
-                      {pct(selectedInsights?.kpis?.pitchRate || 0)}
-                    </div>
-                    <div className="kpi-hint">Quotes per contact.</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Conversion Rate</div>
-                    <div className="kpi-value">
-                      {pct(selectedInsights?.kpis?.conversionRate || 0)}
-                    </div>
-                    <div className="kpi-hint">Issued / (Quoted + Issued).</div>
-                  </div>
-                  <div className="kpi">
-                    <div className="kpi-title">Issued Premium</div>
-                    <div className="kpi-value">
-                      {money(selectedInsights?.kpis?.issuedPremium || 0)}
-                    </div>
-                    <div className="kpi-hint">Total issued premium.</div>
-                  </div>
+                  <KPICard
+                    title="Dials"
+                    value={
+                      selectedInsights?.kpis?.dials?.toLocaleString?.() || "0"
+                    }
+                    hint="Total dials logged."
+                  />
+                  <KPICard
+                    title="Contacts"
+                    value={
+                      selectedInsights?.kpis?.contacts?.toLocaleString?.() ||
+                      "0"
+                    }
+                    hint="Reached contacts."
+                  />
+                  <KPICard
+                    title="Quotes"
+                    value={
+                      selectedInsights?.kpis?.quotes?.toLocaleString?.() || "0"
+                    }
+                    hint="Quotes sent."
+                  />
+                  <KPICard
+                    title="Issued"
+                    value={
+                      selectedInsights?.kpis?.issued?.toLocaleString?.() || "0"
+                    }
+                    hint="Policies issued."
+                  />
+                  <KPICard
+                    title="Contact Rate"
+                    value={pct(selectedInsights?.kpis?.contactRate || 0)}
+                    hint="Contacts per dial."
+                  />
+                  <KPICard
+                    title="Pitch Rate"
+                    value={pct(selectedInsights?.kpis?.pitchRate || 0)}
+                    hint="Quotes per contact."
+                  />
+                  <KPICard
+                    title="Conversion Rate"
+                    value={pct(selectedInsights?.kpis?.conversionRate || 0)}
+                    hint="Issued / (Quoted + Issued)."
+                  />
+                  <KPICard
+                    title="Issued Premium"
+                    value={money(selectedInsights?.kpis?.issuedPremium || 0)}
+                    hint="Total issued premium."
+                  />
+
+                  <KPICard
+                    title="Multiline Pitch Rate"
+                    value={pct(selectedInsights?.kpis?.multilinePitchRate || 0)}
+                    hint="Percentage of Households who were quoted multiple products"
+                  />
+                  <KPICard
+                    title="Multiline Conversion Rate"
+                    value={pct(
+                      selectedInsights?.kpis?.multilineConversionRate || 0
+                    )}
+                    hint="Multiline pitch -> Multiline sales"
+                  />
+                  <KPICard
+                    title="Attach Rate"
+                    value={ratio(selectedInsights?.kpis?.attachRate || 0)}
+                    hint="Issued policies per issued policyholder"
+                  />
+                  <KPICard
+                    title="Multiline Lift"
+                    value={
+                      selectedInsights?.kpis?.multilineLift == null
+                        ? "N/A"
+                        : money(selectedInsights?.kpis?.multilineLift || 0)
+                    }
+                    hint="Average difference between multiline and singleline sales"
+                  />
                 </div>
 
                 <SectionTitle

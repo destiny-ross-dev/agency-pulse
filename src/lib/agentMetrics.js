@@ -51,6 +51,11 @@ export function computeAgentMetrics({
         issued: 0,
         writtenPremium: 0,
         issuedPremium: 0,
+
+        policyholders: new Set(),
+        policyholderDateLobs: new Map(),
+        issuedByPolicyholder: new Map(),
+        issuedPremiumByPolicyholder: new Map(),
       });
     }
     return byAgent.get(name);
@@ -69,6 +74,9 @@ export function computeAgentMetrics({
   for (const r of quoteSalesRows) {
     const a = get(r.agent_name);
     const st = lower(r.status);
+    const policyholder = norm(r.policyholder);
+    const quoteDate = norm(r.date);
+    const lob = norm(r.line_of_business);
 
     // For MVP: each row is either Quoted or Issued
     if (st === "quoted") a.quotes += 1;
@@ -76,10 +84,106 @@ export function computeAgentMetrics({
 
     a.writtenPremium += safeNum(r.written_premium);
     a.issuedPremium += safeNum(r.issued_premium);
+
+    if (policyholder) {
+      a.policyholders.add(policyholder);
+      if (quoteDate) {
+        if (!a.policyholderDateLobs.has(policyholder)) {
+          a.policyholderDateLobs.set(policyholder, new Map());
+        }
+        const dateLobs = a.policyholderDateLobs.get(policyholder);
+        if (!dateLobs.has(quoteDate)) {
+          dateLobs.set(quoteDate, new Set());
+        }
+        if (lob) {
+          dateLobs.get(quoteDate).add(lob);
+        }
+      }
+
+      if (st === "issued") {
+        a.issuedByPolicyholder.set(
+          policyholder,
+          (a.issuedByPolicyholder.get(policyholder) || 0) + 1
+        );
+        a.issuedPremiumByPolicyholder.set(
+          policyholder,
+          (a.issuedPremiumByPolicyholder.get(policyholder) || 0) +
+            safeNum(r.issued_premium)
+        );
+      }
+    }
   }
 
   // Derived metrics
   const agents = Array.from(byAgent.values()).map((a) => {
+    const {
+      policyholders,
+      policyholderDateLobs,
+      issuedByPolicyholder,
+      issuedPremiumByPolicyholder,
+      ...base
+    } = a;
+    const uniquePolicyholders = policyholders.size;
+    let multilinePitchPolicyholders = 0;
+    let multilinePitchDays = 0;
+    let totalPolicyholderDays = 0;
+    let multilineIssuedPolicyholders = 0;
+    let multilineIssuedPremium = 0;
+    let multilineIssuedPolicyholdersAll = 0;
+    let singleLineIssuedPolicyholders = 0;
+    let singleLineIssuedPremium = 0;
+    const multilinePolicyholderSet = new Set();
+
+    for (const [policyholder, dateLobs] of policyholderDateLobs.entries()) {
+      let hasMultilinePitch = false;
+      for (const lobSet of dateLobs.values()) {
+        totalPolicyholderDays += 1;
+        if (lobSet.size >= 2) {
+          multilinePitchDays += 1;
+          hasMultilinePitch = true;
+        }
+      }
+      if (hasMultilinePitch) {
+        multilinePolicyholderSet.add(policyholder);
+      }
+
+      const issuedCount = issuedByPolicyholder.get(policyholder) || 0;
+      if (issuedCount > 1) {
+        multilineIssuedPolicyholdersAll += 1;
+        multilineIssuedPremium += issuedPremiumByPolicyholder.get(policyholder) || 0;
+      } else if (issuedCount === 1) {
+        singleLineIssuedPolicyholders += 1;
+        singleLineIssuedPremium += issuedPremiumByPolicyholder.get(policyholder) || 0;
+      }
+
+      if (hasMultilinePitch && issuedCount > 1) {
+        multilineIssuedPolicyholders += 1;
+      }
+    }
+
+    multilinePitchPolicyholders = multilinePolicyholderSet.size;
+    const multilinePitchRate = div(
+      multilinePitchDays,
+      totalPolicyholderDays
+    );
+    const multilineConversionRate = div(
+      multilineIssuedPolicyholders,
+      multilinePitchPolicyholders
+    );
+    const issuedPolicyholders = issuedByPolicyholder.size;
+    const attachRate = div(a.issued, issuedPolicyholders);
+    const avgMultilinePremium =
+      multilineIssuedPolicyholdersAll > 0
+        ? multilineIssuedPremium / multilineIssuedPolicyholdersAll
+        : null;
+    const avgSingleLinePremium = div(
+      singleLineIssuedPremium,
+      singleLineIssuedPolicyholders
+    );
+    const multilineLift =
+      avgMultilinePremium === null || singleLineIssuedPolicyholders === 0
+        ? null
+        : avgMultilinePremium - avgSingleLinePremium;
     const totalQuotedOrIssued = a.quotes + a.issued;
     const conversionRate = div(a.issued, totalQuotedOrIssued); // issued / (quoted + issued)
     const contactRate = div(a.contacts, a.dials); // contacts / dials
@@ -96,7 +200,7 @@ export function computeAgentMetrics({
     const issuedPremPerIssued = div(a.issuedPremium, a.issued);
 
     return {
-      ...a,
+      ...base,
       conversionRate,
       contactRate,
       quotesPerContact,
@@ -107,6 +211,12 @@ export function computeAgentMetrics({
       issuedPremPerDial,
       issuedPremPerContact,
       issuedPremPerIssued,
+      uniquePolicyholders,
+      multilinePitchPolicyholders,
+      multilinePitchRate,
+      multilineConversionRate,
+      attachRate,
+      multilineLift,
     };
   });
 
@@ -201,6 +311,10 @@ export function computeAgentInsights({
         contactRate: agent.contactRate,
         pitchRate: agent.quotesPerContact,
         issuedPremium: agent.issuedPremium,
+        multilinePitchRate: agent.multilinePitchRate,
+        multilineConversionRate: agent.multilineConversionRate,
+        attachRate: agent.attachRate,
+        multilineLift: agent.multilineLift,
       },
       flags,
     };

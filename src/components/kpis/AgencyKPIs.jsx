@@ -1,5 +1,6 @@
 import StackedAreaChart from "../charts/StackedAreaChart";
 import { formatNumberShort, money, pct } from "../../lib/formatHelpers";
+import KPICard from "./KPICard";
 
 export default function AgencyKPIs({
   metrics,
@@ -14,49 +15,39 @@ export default function AgencyKPIs({
   return (
     <>
       <div className="kpi-grid" style={{ marginTop: 14 }}>
-        <button
+        <KPICard
+          as="button"
           type="button"
-          className={`kpi kpi--selectable ${isPremium ? "kpi--active" : ""}`}
+          className={`kpi--selectable ${isPremium ? "kpi--active" : ""}`}
           onClick={() => onChartModeChange?.("premium")}
           aria-pressed={isPremium}
-        >
-          <div className="kpi-title">Total Issued Premium</div>
-          <div className="kpi-value">
-            {metrics ? money(metrics.totalIssuedPremium) : "—"}
-          </div>
-          <div className="kpi-hint">
-            Sum of Issued Premium where Status = Issued.
-          </div>
-        </button>
+          title="Total Issued Premium"
+          value={metrics ? money(metrics.totalIssuedPremium) : "—"}
+          hint="Sum of Issued Premium where Status = Issued."
+        />
 
-        <button
+        <KPICard
+          as="button"
           type="button"
-          className={`kpi kpi--selectable ${isPolicies ? "kpi--active" : ""}`}
+          className={`kpi--selectable ${isPolicies ? "kpi--active" : ""}`}
           onClick={() => onChartModeChange?.("policies")}
           aria-pressed={isPolicies}
-        >
-          <div className="kpi-title">Policies Issued</div>
-          <div className="kpi-value">
-            {metrics ? metrics.policiesIssued.toLocaleString() : "—"}
-          </div>
-          <div className="kpi-hint">Count of rows where Status = Issued.</div>
-        </button>
+          title="Policies Issued"
+          value={metrics ? metrics.policiesIssued.toLocaleString() : "—"}
+          hint="Count of rows where Status = Issued."
+        />
 
-        <div className="kpi">
-          <div className="kpi-title">Conversion Rate</div>
-          <div className="kpi-value">
-            {metrics ? pct(metrics.conversionRate) : "—"}
-          </div>
-          <div className="kpi-hint">Issued / (Quoted + Issued).</div>
-        </div>
+        <KPICard
+          title="Conversion Rate"
+          value={metrics ? pct(metrics.conversionRate) : "—"}
+          hint="Issued / (Quoted + Issued)."
+        />
 
-        <div className="kpi">
-          <div className="kpi-title">Cost Per Acquisition (CPA)</div>
-          <div className="kpi-value">
-            {metrics ? money(metrics.costPerAcquisition) : "—"}
-          </div>
-          <div className="kpi-hint">Paid spend / Issued policies (MVP).</div>
-        </div>
+        <KPICard
+          title="Cost Per Acquisition (CPA)"
+          value={metrics ? money(metrics.costPerAcquisition) : "—"}
+          hint="Paid spend / Issued policies (MVP)."
+        />
       </div>
 
       <StackedAreaChart
