@@ -295,7 +295,7 @@ export default function Dashboard({
             <table className="table">
               <thead>
                 <tr>
-                  <th>Lead Source</th>
+                  <th className="lead-source-col">Lead Source</th>
                   <th className="right">Leads</th>
                   <th className="right">Spend</th>
                   <th className="right">$/Lead</th>
@@ -311,7 +311,9 @@ export default function Dashboard({
               <tbody>
                 {roiRows.map((row) => (
                   <tr key={row.leadSource}>
-                    <td style={{ fontWeight: 900 }}>{row.leadSource}</td>
+                    <td className="lead-source-cell" style={{ fontWeight: 900 }}>
+                      {row.leadSource}
+                    </td>
                     <td className="right">{row.leads.toLocaleString()}</td>
                     <td className="right">{money2(row.spend)}</td>
                     <td className="right">{money2(row.spendPerLead)}</td>

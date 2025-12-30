@@ -613,6 +613,13 @@ td {
   text-align: left;
 }
 
+table thead th {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
 tbody tr:hover {
   background: #f8fafc;
 }
@@ -1162,10 +1169,26 @@ tbody tr:hover {
   font-weight: 900;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.table .lead-source-col,
+.table .lead-source-cell {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
 }
 
 .table tbody tr:hover {
   background: #f8fafc;
+}
+
+.table tbody tr:nth-child(even) {
+  background: #f7f9fc;
 }
 
 .agent-link {
@@ -1279,6 +1302,14 @@ tbody tr:hover {
   font-weight: 900;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.funnel-table tbody tr:nth-child(even) {
+  background: #f7f9fc;
 }
 
 .funnel-row-worst {
