@@ -244,6 +244,7 @@ export function WorkflowDataProvider({ children }) {
     return {
       activityRows: filterByRange(normalizedAll.activityAll, "date"),
       quoteSalesRows: filterQuoteSalesByRange(normalizedAll.quoteSalesAll),
+      quoteSalesQuotedRows: filterByRange(normalizedAll.quoteSalesAll, "date"),
       paidLeadRows: filterByRange(normalizedAll.paidLeadsAll, "date"),
     };
   }, [canAnalyze, filterByRange, filterQuoteSalesByRange, normalizedAll]);

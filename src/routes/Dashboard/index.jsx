@@ -7,6 +7,8 @@ import DataHealthPanel from "../../components/health/DataHealthPanel";
 import GoalsPanel from "../../components/goals/GoalsPanel";
 import FunnelDiagnostics from "../../components/funnel/FunnelDiagnostics";
 import AgencyKPIs from "../../components/kpis/AgencyKPIs";
+import LeadSourceQuoteActivityChart from "../../components/charts/LeadSourceQuoteActivityChart";
+import LeadSourceRoiBubbleChart from "../../components/charts/LeadSourceRoiBubbleChart";
 import { money, money2, pct, ratio } from "../../lib/formatHelpers";
 export default function Dashboard({
   metrics,
@@ -36,6 +38,10 @@ export default function Dashboard({
   setRoiSort,
   roiScope,
   setRoiScope,
+  leadSourceQuoteActivity,
+  leadSourceRoiBubbleRows,
+  leadSourceScope,
+  setLeadSourceScope,
   onBack,
   onStartOver,
 }) {
@@ -345,6 +351,19 @@ export default function Dashboard({
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="chart-grid">
+          <LeadSourceQuoteActivityChart
+            rows={leadSourceQuoteActivity}
+            rangeLabel={rangeLabel}
+            scope={leadSourceScope}
+            onScopeChange={setLeadSourceScope}
+          />
+          <LeadSourceRoiBubbleChart
+            rows={leadSourceRoiBubbleRows}
+            rangeLabel={rangeLabel}
+          />
         </div>
 
         <div style={{ marginTop: 16 }} className="mapping-table">

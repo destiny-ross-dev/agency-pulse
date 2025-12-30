@@ -10,7 +10,11 @@ import {
 import { parseCsvFile, parseCsvText } from "./lib/csv";
 import { SCHEMAS } from "./lib/schemas";
 import { suggestMapping } from "./lib/mapping";
-import { computeLeadSourceROI } from "./lib/leadSourceMetrics";
+import {
+  computeLeadSourceQuoteActivity,
+  computeLeadSourceROI,
+  normalizeLeadSourceName,
+} from "./lib/leadSourceMetrics";
 import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
 
 import TopBar from "./components/layout/TopBar";
@@ -65,6 +69,7 @@ function StepWorkflow({ step }) {
 
   const [roiSort, setRoiSort] = useState("premiumPerSpend");
   const [roiScope, setRoiScope] = useState("paid");
+  const [leadSourceScope, setLeadSourceScope] = useState("all");
 
   const [funnelMode, setFunnelMode] = useState("agency");
   const [selectedAgent, setSelectedAgent] = useState("");
@@ -218,6 +223,46 @@ function StepWorkflow({ step }) {
     });
   }, [step, filteredRows, roiSort, roiScope]);
 
+  const paidSourceKeys = useMemo(() => {
+    if (!filteredRows?.paidLeadRows) return new Set();
+    const keys = new Set();
+    for (const row of filteredRows.paidLeadRows) {
+      const key = normalizeLeadSourceName(row.lead_source) || "unknown";
+      keys.add(key);
+    }
+    return keys;
+  }, [filteredRows]);
+
+  const leadSourceQuoteActivity = useMemo(() => {
+    if (step !== 3) return [];
+    if (!filteredRows?.quoteSalesQuotedRows) return [];
+
+    const rows = computeLeadSourceQuoteActivity({
+      quoteSalesRows: filteredRows.quoteSalesQuotedRows,
+    });
+    if (leadSourceScope === "all") return rows;
+
+    return rows.filter((row) => paidSourceKeys.has(row.key));
+  }, [step, filteredRows, leadSourceScope, paidSourceKeys]);
+
+  const leadSourceRoiBubbleRows = useMemo(() => {
+    if (step !== 3) return [];
+    if (!filteredRows) return [];
+
+    const rows = computeLeadSourceROI({
+      quoteSalesRows: filteredRows.quoteSalesRows,
+      paidLeadRows: filteredRows.paidLeadRows,
+    }).map((row) => ({
+      ...row,
+      paid: paidSourceKeys.has(
+        normalizeLeadSourceName(row.leadSource) || "unknown"
+      ),
+    }));
+
+    if (leadSourceScope === "all") return rows;
+    return rows.filter((row) => row.paid);
+  }, [step, filteredRows, leadSourceScope, paidSourceKeys]);
+
   const funnelData = useMemo(() => {
     if (step !== 3) return null;
     if (!filteredRows) return null;
@@ -323,6 +368,10 @@ function StepWorkflow({ step }) {
             setRoiSort={setRoiSort}
             roiScope={roiScope}
             setRoiScope={setRoiScope}
+            leadSourceQuoteActivity={leadSourceQuoteActivity}
+            leadSourceRoiBubbleRows={leadSourceRoiBubbleRows}
+            leadSourceScope={leadSourceScope}
+            setLeadSourceScope={setLeadSourceScope}
             onBack={back}
             onStartOver={resetWorkflow}
           />

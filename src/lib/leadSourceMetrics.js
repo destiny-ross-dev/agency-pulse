@@ -8,6 +8,10 @@ function normName(s) {
     .replace(/[^\w\s.-]/g, ""); // strip weird punctuation
 }
 
+export function normalizeLeadSourceName(value) {
+  return normName(value);
+}
+
 function displayName(originals) {
   // prefer the most common original casing
   let best = "";
@@ -127,6 +131,49 @@ export function computeLeadSourceROI({
   rows.sort(
     (a, b) =>
       b.premiumPerSpend - a.premiumPerSpend || b.issuedPremium - a.issuedPremium
+  );
+
+  return rows;
+}
+
+/**
+ * Computes quote activity counts by lead source based on quote date filtering.
+ * quoteSalesRows: expects { lead_source }
+ */
+export function computeLeadSourceQuoteActivity({ quoteSalesRows = [] }) {
+  const map = new Map();
+
+  function get(key) {
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        originals: new Map(),
+        count: 0,
+      });
+    }
+    return map.get(key);
+  }
+
+  for (const r of quoteSalesRows) {
+    const raw = String(r.lead_source ?? "").trim();
+    const key = normName(raw) || "unknown";
+    const rec = get(key);
+
+    if (raw) rec.originals.set(raw, (rec.originals.get(raw) || 0) + 1);
+
+    rec.count += 1;
+  }
+
+  const rows = Array.from(map.values()).map((rec) => ({
+    key: rec.key,
+    leadSource:
+      displayName(rec.originals) ||
+      (rec.key === "unknown" ? "Unknown" : rec.key),
+    count: rec.count,
+  }));
+
+  rows.sort(
+    (a, b) => b.count - a.count || a.leadSource.localeCompare(b.leadSource)
   );
 
   return rows;
