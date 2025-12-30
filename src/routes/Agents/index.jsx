@@ -675,6 +675,7 @@ export default function Agents({ agentInsights }) {
                           <th>LOB</th>
                           <th>Policy Type</th>
                           <th>Business Type</th>
+                          <th>Lead Source</th>
                           <th className="right">Quoted Premium</th>
                         </tr>
                       </thead>
@@ -686,6 +687,7 @@ export default function Agents({ agentInsights }) {
                             <td>{row?.line_of_business || "—"}</td>
                             <td>{row?.policy_type || "—"}</td>
                             <td>{row?.business_type || "—"}</td>
+                            <td>{row?.lead_source || "—"}</td>
                             <td className="right">
                               {formatPremium(row?.written_premium)}
                             </td>
@@ -694,7 +696,7 @@ export default function Agents({ agentInsights }) {
                         {filteredQuotedRows.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={8}
                               style={{
                                 padding: 14,
                                 color: "var(--muted)",
@@ -792,6 +794,7 @@ export default function Agents({ agentInsights }) {
                           <th>LOB</th>
                           <th>Policy Type</th>
                           <th>Business Type</th>
+                          <th>Lead Source</th>
                           <th className="right">Quoted Premium</th>
                           <th className="right">Issued Premium</th>
                         </tr>
@@ -807,6 +810,7 @@ export default function Agents({ agentInsights }) {
                               <td>{row?.line_of_business || "—"}</td>
                               <td>{row?.policy_type || "—"}</td>
                               <td>{row?.business_type || "—"}</td>
+                              <td>{row?.lead_source || "—"}</td>
                               <td className="right">
                                 {formatPremium(row?.written_premium)}
                               </td>
@@ -819,7 +823,7 @@ export default function Agents({ agentInsights }) {
                         {filteredIssuedRows.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={9}
                               style={{
                                 padding: 14,
                                 color: "var(--muted)",

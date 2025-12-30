@@ -16,6 +16,7 @@ import {
   normalizeLeadSourceName,
 } from "./lib/leadSourceMetrics";
 import { computeFunnel, computeFunnelByAgent } from "./lib/funnel";
+import useOverflowTooltips from "./lib/useOverflowTooltips";
 
 import TopBar from "./components/layout/TopBar";
 import DateRangeFilter from "./components/common/DateRangeFilter";
@@ -387,6 +388,8 @@ function AgentsRoute() {
 }
 
 export default function App() {
+  useOverflowTooltips();
+
   return (
     <WorkflowDataProvider>
       <ScrollToTop />
