@@ -15,6 +15,10 @@ import { money, pct, ratio, formatReadableDate } from "../../lib/formatHelpers";
 import KPICard from "../../components/kpis/KPICard";
 import ActivityFunnelChart from "../../components/charts/ActivityFunnelChart";
 import { computeActivityFunnelSeries } from "../../lib/activityFunnelSeries";
+import MultilineLOBStackedBar from "../../components/charts/MultilineLOBStackedBar";
+import { buildMultilineLOBSeries } from "../../lib/multilineLobSeries";
+
+const MS_DAY = 24 * 60 * 60 * 1000;
 
 function collectOptions(rows, key) {
   const values = new Set();
@@ -105,6 +109,7 @@ export default function Agents({ agentInsights }) {
     ? insightsByAgent[activeSelectedAgent]
     : null;
   const quoteSalesRows = filteredRows?.quoteSalesRows || [];
+  const quoteSalesQuotedRows = filteredRows?.quoteSalesQuotedRows || [];
   const agencyContactRate = agentInsights?.benchmarks?.contactRate ?? 0;
   const agencyPitchRate = agentInsights?.benchmarks?.pitchRate ?? 0;
   const contactRateTarget = (kpiGoals?.contactRateTargetPct ?? 10) / 100;
@@ -126,6 +131,11 @@ export default function Agents({ agentInsights }) {
         (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
       )
     : [];
+  const selectedQuoteSalesQuotedRows = activeSelectedAgent
+    ? quoteSalesQuotedRows.filter(
+        (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
+      )
+    : [];
   const selectedActivityRows = useMemo(() => {
     if (!activeSelectedAgent || !filteredRows?.activityRows) return [];
     return filteredRows.activityRows.filter(
@@ -140,6 +150,31 @@ export default function Agents({ agentInsights }) {
         activeRange,
       }),
     [activeRange, rangeMode, selectedActivityRows]
+  );
+  const multilineBucket = useMemo(() => {
+    if (rangeMode === "7d") {
+      return "day";
+    }
+    if (rangeMode === "30d" || rangeMode === "90d") {
+      return "week";
+    }
+    if (rangeMode === "365d") return "month";
+    if (rangeMode === "custom" && activeRange?.start && activeRange?.end) {
+      const days = Math.max(
+        1,
+        Math.ceil((activeRange.end - activeRange.start) / MS_DAY)
+      );
+      return days <= 90 ? "week" : "month";
+    }
+    return "month";
+  }, [activeRange, rangeMode]);
+  const multilineSeries = useMemo(
+    () =>
+      buildMultilineLOBSeries(selectedQuoteSalesQuotedRows, {
+        bucket: multilineBucket,
+        range: activeRange,
+      }),
+    [activeRange, multilineBucket, selectedQuoteSalesQuotedRows]
   );
 
   const quotedRows = selectedQuoteSalesRows.filter(
@@ -577,6 +612,12 @@ export default function Agents({ agentInsights }) {
                     }
                     hint="Average difference between multiline and singleline sales"
                   />
+                  <div className="kpi-grid__full">
+                    <MultilineLOBStackedBar
+                      series={multilineSeries}
+                      emptyMessage="Not enough multiline opportunities in the selected range."
+                    />
+                  </div>
                 </div>
 
                 <SectionTitle
