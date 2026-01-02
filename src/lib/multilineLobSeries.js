@@ -58,6 +58,12 @@ function formatMonthLabel(d) {
   }).format(d);
 }
 
+function startOfWeek(date) {
+  const day = startOfDay(date);
+  const dayIndex = (day.getDay() + 6) % 7; // 0 = Monday
+  return new Date(day.getTime() - dayIndex * MS_DAY);
+}
+
 function buildBuckets(start, end, granularity) {
   const buckets = [];
   if (!start || !end) return buckets;
@@ -77,7 +83,7 @@ function buildBuckets(start, end, granularity) {
   }
 
   if (granularity === "week") {
-    let cursor = startOfDay(start);
+    let cursor = startOfWeek(start);
     const endDay = startOfDay(end);
     while (cursor.getTime() <= endDay.getTime()) {
       buckets.push({
@@ -120,15 +126,6 @@ function bucketIndexFor(date, start, granularity) {
   );
 }
 
-function isoWeekInfo(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((d - yearStart) / MS_DAY + 1) / 7);
-  return { year: d.getUTCFullYear(), week };
-}
-
 function bucketDescriptor(date, bucket) {
   if (bucket === "day") {
     const day = startOfDay(date);
@@ -141,12 +138,12 @@ function bucketDescriptor(date, bucket) {
   }
 
   if (bucket === "week") {
-    const { year, week } = isoWeekInfo(date);
-    const key = `${year}-W${String(week).padStart(2, "0")}`;
+    const weekStart = startOfWeek(date);
+    const key = formatYMD(weekStart);
     return {
       key,
-      label: key,
-      sortKey: year * 100 + week,
+      label: `Week of ${formatReadableDate(weekStart)}`,
+      sortKey: weekStart.getTime(),
     };
   }
 

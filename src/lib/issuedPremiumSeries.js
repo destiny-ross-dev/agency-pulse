@@ -57,6 +57,12 @@ function formatMonthLabel(d) {
   }).format(d);
 }
 
+function startOfWeek(date) {
+  const day = startOfDay(date);
+  const dayIndex = (day.getDay() + 6) % 7; // 0 = Monday
+  return new Date(day.getTime() - dayIndex * MS_DAY);
+}
+
 function buildBuckets(start, end, granularity) {
   const buckets = [];
   if (!start || !end) return buckets;
@@ -77,7 +83,7 @@ function buildBuckets(start, end, granularity) {
   }
 
   if (granularity === "week") {
-    let cursor = startOfDay(start);
+    let cursor = startOfWeek(start);
     const endDay = startOfDay(end);
     while (cursor.getTime() <= endDay.getTime()) {
       const key = formatYMD(cursor);

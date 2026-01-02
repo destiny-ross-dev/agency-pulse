@@ -14,6 +14,12 @@ function daysBetween(start, end) {
   return Math.max(0, Math.floor((endDay - startDay) / MS_DAY) + 1);
 }
 
+function startOfWeek(date) {
+  const day = startOfDay(date);
+  const dayIndex = (day.getDay() + 6) % 7; // 0 = Monday
+  return new Date(day.getTime() - dayIndex * MS_DAY);
+}
+
 function pickGranularity(rangeMode, activeRange, rows) {
   if (rangeMode === "7d") return "day";
   if (rangeMode === "30d") return "week";
@@ -65,7 +71,7 @@ function buildBuckets(start, end, granularity) {
   }
 
   if (granularity === "week") {
-    let cursor = startOfDay(start);
+    let cursor = startOfWeek(start);
     const endDay = startOfDay(end);
     while (cursor.getTime() <= endDay.getTime()) {
       const key = formatYMD(cursor);
