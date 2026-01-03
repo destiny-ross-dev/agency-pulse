@@ -1,5 +1,5 @@
-import { formatReadableDate } from "./formatHelpers";
 import { formatYMD, parseDateLoose, startOfDay } from "./dates";
+import { buildBuckets, bucketIndexFor } from "./timeBuckets";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_LOB_ORDER = ["Auto", "Fire", "Life", "Health"];
@@ -51,109 +51,19 @@ function windowKeyFor(date, groupWindowDays) {
   return formatYMD(new Date(windowStartIndex * MS_DAY));
 }
 
-function formatMonthLabel(d) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    year: "numeric",
-  }).format(d);
-}
-
-function startOfWeek(date) {
-  const day = startOfDay(date);
-  const dayIndex = (day.getDay() + 6) % 7; // 0 = Monday
-  return new Date(day.getTime() - dayIndex * MS_DAY);
-}
-
-function buildBuckets(start, end, granularity) {
-  const buckets = [];
-  if (!start || !end) return buckets;
-
-  if (granularity === "day") {
-    let cursor = startOfDay(start);
-    const endDay = startOfDay(end);
-    while (cursor.getTime() <= endDay.getTime()) {
-      buckets.push({
-        key: formatYMD(cursor),
-        label: formatReadableDate(cursor),
-        start: new Date(cursor),
-      });
-      cursor = new Date(cursor.getTime() + MS_DAY);
-    }
-    return buckets;
-  }
-
-  if (granularity === "week") {
-    let cursor = startOfWeek(start);
-    const endDay = startOfDay(end);
-    while (cursor.getTime() <= endDay.getTime()) {
-      buckets.push({
-        key: formatYMD(cursor),
-        label: `Week of ${formatReadableDate(cursor)}`,
-        start: new Date(cursor),
-      });
-      cursor = new Date(cursor.getTime() + MS_DAY * 7);
-    }
-    return buckets;
-  }
-
-  let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-  while (cursor.getTime() <= endMonth.getTime()) {
-    buckets.push({
-      key: `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(
-        2,
-        "0"
-      )}`,
-      label: formatMonthLabel(cursor),
-      start: new Date(cursor),
-    });
-    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-  }
-  return buckets;
-}
-
-function bucketIndexFor(date, start, granularity) {
-  const day = startOfDay(date);
-  if (granularity === "day") {
-    return Math.floor((day.getTime() - start.getTime()) / MS_DAY);
-  }
-  if (granularity === "week") {
-    return Math.floor((day.getTime() - start.getTime()) / (MS_DAY * 7));
-  }
-  return (
-    (day.getFullYear() - start.getFullYear()) * 12 +
-    (day.getMonth() - start.getMonth())
-  );
-}
-
 function bucketDescriptor(date, bucket) {
-  if (bucket === "day") {
-    const day = startOfDay(date);
-    const key = formatYMD(day);
-    return {
-      key,
-      label: formatReadableDate(day),
-      sortKey: day.getTime(),
-    };
-  }
-
-  if (bucket === "week") {
-    const weekStart = startOfWeek(date);
-    const key = formatYMD(weekStart);
-    return {
-      key,
-      label: `Week of ${formatReadableDate(weekStart)}`,
-      sortKey: weekStart.getTime(),
-    };
-  }
-
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const key = `${year}-${String(month).padStart(2, "0")}`;
+  const buckets = buildBuckets({
+    start: date,
+    end: date,
+    granularity: bucket,
+  });
+  const fallback = startOfDay(date);
+  const entry = buckets[0];
+  const bucketStart = entry?.start || fallback;
   return {
-    key,
-    label: formatMonthLabel(date),
-    sortKey: year * 12 + month,
+    key: entry?.key || formatYMD(bucketStart),
+    label: entry?.label || formatYMD(bucketStart),
+    sortKey: bucketStart.getTime(),
   };
 }
 
@@ -197,7 +107,11 @@ export function buildMultilineLOBSeries(
   const hasRange = range?.start && range?.end;
 
   if (hasRange) {
-    const buckets = buildBuckets(range.start, range.end, bucket);
+    const buckets = buildBuckets({
+      start: range.start,
+      end: range.end,
+      granularity: bucket,
+    });
     if (buckets.length === 0) {
       return { buckets: [], lobs: DEFAULT_LOB_ORDER, granularity: bucket };
     }
@@ -211,7 +125,11 @@ export function buildMultilineLOBSeries(
 
     for (const group of groupMap.values()) {
       if (group.lobs.size < 2) continue;
-      const idx = bucketIndexFor(group.minDate, buckets[0].start, bucket);
+      const idx = bucketIndexFor({
+        date: group.minDate,
+        start: buckets[0].start,
+        granularity: bucket,
+      });
       if (idx < 0 || idx >= buckets.length) continue;
       const bucketEntry = bucketMap.get(buckets[idx].key);
       for (const lob of group.lobs) {
