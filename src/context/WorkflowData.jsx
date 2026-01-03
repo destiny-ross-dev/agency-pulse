@@ -37,6 +37,27 @@ const GOAL_LIMITS = {
   householdsQuotedPerDayTarget: { min: 0, max: Number.POSITIVE_INFINITY },
 };
 
+const EMPTY_AGENT_QUOTE_SALES = {
+  baseRows: [],
+  quotedRows: [],
+  issuedRows: [],
+  quoteLobOptions: [],
+  quotePolicyTypeOptions: [],
+  quoteBusinessTypeOptions: [],
+  issuedLobOptions: [],
+  issuedPolicyTypeOptions: [],
+  issuedBusinessTypeOptions: [],
+};
+
+function collectOptions(rows, key) {
+  const values = new Set();
+  rows.forEach((row) => {
+    const value = String(row?.[key] || "").trim();
+    if (value) values.add(value);
+  });
+  return Array.from(values).sort((a, b) => a.localeCompare(b));
+}
+
 function getQuoteSalesDate(row) {
   const status = String(row?.status || "")
     .trim()
@@ -308,6 +329,80 @@ export function WorkflowDataProvider({ children }) {
     });
   }, [filteredRows, activeRange, rangeMode]);
 
+  const agentQuoteSalesViews = useMemo(() => {
+    if (!filteredRows?.quoteSalesRows) return new Map();
+    const map = new Map();
+
+    for (const row of filteredRows.quoteSalesRows) {
+      const agentName =
+        String(row?.agent_name || "Unknown").trim() || "Unknown";
+      if (!map.has(agentName)) {
+        map.set(agentName, {
+          baseRows: [],
+          quotedRows: [],
+          issuedRows: [],
+          quoteLobOptions: new Set(),
+          quotePolicyTypeOptions: new Set(),
+          quoteBusinessTypeOptions: new Set(),
+          issuedLobOptions: new Set(),
+          issuedPolicyTypeOptions: new Set(),
+          issuedBusinessTypeOptions: new Set(),
+        });
+      }
+      const entry = map.get(agentName);
+      entry.baseRows.push(row);
+
+      const status = String(row?.status || "").trim().toLowerCase();
+      if (status === "quoted") {
+        entry.quotedRows.push(row);
+        if (row?.line_of_business)
+          entry.quoteLobOptions.add(String(row.line_of_business).trim());
+        if (row?.policy_type)
+          entry.quotePolicyTypeOptions.add(String(row.policy_type).trim());
+        if (row?.business_type)
+          entry.quoteBusinessTypeOptions.add(String(row.business_type).trim());
+      } else if (status === "issued") {
+        entry.issuedRows.push(row);
+        if (row?.line_of_business)
+          entry.issuedLobOptions.add(String(row.line_of_business).trim());
+        if (row?.policy_type)
+          entry.issuedPolicyTypeOptions.add(String(row.policy_type).trim());
+        if (row?.business_type)
+          entry.issuedBusinessTypeOptions.add(String(row.business_type).trim());
+      }
+    }
+
+    for (const [agentName, entry] of map.entries()) {
+      map.set(agentName, {
+        baseRows: entry.baseRows,
+        quotedRows: entry.quotedRows,
+        issuedRows: entry.issuedRows,
+        quoteLobOptions: collectOptions(entry.quotedRows, "line_of_business"),
+        quotePolicyTypeOptions: collectOptions(entry.quotedRows, "policy_type"),
+        quoteBusinessTypeOptions: collectOptions(
+          entry.quotedRows,
+          "business_type"
+        ),
+        issuedLobOptions: collectOptions(entry.issuedRows, "line_of_business"),
+        issuedPolicyTypeOptions: collectOptions(entry.issuedRows, "policy_type"),
+        issuedBusinessTypeOptions: collectOptions(
+          entry.issuedRows,
+          "business_type"
+        ),
+      });
+    }
+
+    return map;
+  }, [filteredRows]);
+
+  const getAgentQuoteSales = useCallback(
+    (agentName) => {
+      if (!agentName) return EMPTY_AGENT_QUOTE_SALES;
+      return agentQuoteSalesViews.get(agentName) || EMPTY_AGENT_QUOTE_SALES;
+    },
+    [agentQuoteSalesViews]
+  );
+
   const rangeLabel = useMemo(() => {
     if (rangeMode === "all") return "All Time";
     if (rangeMode === "7d") return "Last 7 days";
@@ -362,6 +457,7 @@ export function WorkflowDataProvider({ children }) {
     agentInsights,
     issuedPremiumSeries,
     issuedPolicySeries,
+    getAgentQuoteSales,
     rangeLabel,
     resetWorkflowData,
     kpiGoals,

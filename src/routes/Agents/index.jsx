@@ -75,6 +75,7 @@ export default function Agents({ agentInsights }) {
     kpiGoals,
     rangeMode,
     activeRange,
+    getAgentQuoteSales,
   } = useWorkflowData();
   const insightsByAgent = agentInsights?.byAgent || {};
   const displayAgents = allAgentRows.length > 0 ? allAgentRows : agentRows;
@@ -116,8 +117,6 @@ export default function Agents({ agentInsights }) {
   const selectedInsights = activeSelectedAgent
     ? insightsByAgent[activeSelectedAgent]
     : null;
-  const quoteSalesRows = filteredRows?.quoteSalesRows || [];
-  const quoteSalesQuotedRows = filteredRows?.quoteSalesQuotedRows || [];
   const agencyContactRate = agentInsights?.benchmarks?.contactRate ?? 0;
   const agencyPitchRate = agentInsights?.benchmarks?.pitchRate ?? 0;
   const contactRateTarget = (kpiGoals?.contactRateTargetPct ?? 10) / 100;
@@ -134,16 +133,10 @@ export default function Agents({ agentInsights }) {
     return money(premium);
   }
 
-  const selectedQuoteSalesRows = activeSelectedAgent
-    ? quoteSalesRows.filter(
-        (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
-      )
-    : [];
-  const selectedQuoteSalesQuotedRows = activeSelectedAgent
-    ? quoteSalesQuotedRows.filter(
-        (row) => String(row?.agent_name || "").trim() === activeSelectedAgent
-      )
-    : [];
+  const agentQuoteSales = useMemo(
+    () => getAgentQuoteSales(activeSelectedAgent),
+    [activeSelectedAgent, getAgentQuoteSales]
+  );
   const selectedActivityRows = useMemo(() => {
     if (!activeSelectedAgent || !filteredRows?.activityRows) return [];
     return filteredRows.activityRows.filter(
@@ -176,25 +169,9 @@ export default function Agents({ agentInsights }) {
     }
     return "month";
   }, [activeRange, rangeMode]);
-  const multilineSeries = useMemo(
-    () =>
-      buildMultilineLOBSeries(selectedQuoteSalesQuotedRows, {
-        bucket: multilineBucket,
-        range: activeRange,
-      }),
-    [activeRange, multilineBucket, selectedQuoteSalesQuotedRows]
-  );
-
-  const quotedRows = selectedQuoteSalesRows.filter(
-    (row) => String(row?.status || "").toLowerCase() === "quoted"
-  );
-  const issuedRows = selectedQuoteSalesRows.filter(
-    (row) => String(row?.status || "").toLowerCase() === "issued"
-  );
-  const quoteLobOptions = useMemo(
-    () => collectOptions(quotedRows, "line_of_business"),
-    [quotedRows]
-  );
+  const quotedRows = agentQuoteSales.quotedRows;
+  const issuedRows = agentQuoteSales.issuedRows;
+  const quoteLobOptions = agentQuoteSales.quoteLobOptions;
   const quotePolicyTypeOptions = useMemo(() => {
     const rows = quoteFilters.lob
       ? quotedRows.filter(
@@ -204,14 +181,8 @@ export default function Agents({ agentInsights }) {
       : quotedRows;
     return collectOptions(rows, "policy_type");
   }, [quotedRows, quoteFilters.lob]);
-  const quoteBusinessTypeOptions = useMemo(
-    () => collectOptions(quotedRows, "business_type"),
-    [quotedRows]
-  );
-  const issuedLobOptions = useMemo(
-    () => collectOptions(issuedRows, "line_of_business"),
-    [issuedRows]
-  );
+  const quoteBusinessTypeOptions = agentQuoteSales.quoteBusinessTypeOptions;
+  const issuedLobOptions = agentQuoteSales.issuedLobOptions;
   const issuedPolicyTypeOptions = useMemo(() => {
     const rows = issuedFilters.lob
       ? issuedRows.filter(
@@ -221,10 +192,7 @@ export default function Agents({ agentInsights }) {
       : issuedRows;
     return collectOptions(rows, "policy_type");
   }, [issuedRows, issuedFilters.lob]);
-  const issuedBusinessTypeOptions = useMemo(
-    () => collectOptions(issuedRows, "business_type"),
-    [issuedRows]
-  );
+  const issuedBusinessTypeOptions = agentQuoteSales.issuedBusinessTypeOptions;
   const filteredQuotedRows = useMemo(
     () => applyQuoteFilters(quotedRows, quoteFilters),
     [quotedRows, quoteFilters]
@@ -232,6 +200,14 @@ export default function Agents({ agentInsights }) {
   const filteredIssuedRows = useMemo(
     () => applyQuoteFilters(issuedRows, issuedFilters),
     [issuedRows, issuedFilters]
+  );
+  const multilineSeries = useMemo(
+    () =>
+      buildMultilineLOBSeries(quotedRows, {
+        bucket: multilineBucket,
+        range: activeRange,
+      }),
+    [activeRange, multilineBucket, quotedRows]
   );
   const contactRateInsight = useMemo(() => {
     if (!selectedInsights) return null;
