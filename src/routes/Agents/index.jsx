@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import Card from "../../components/common/Card";
@@ -89,6 +89,14 @@ export default function Agents({ agentInsights }) {
     const hasAgent = displayAgents.some((agent) => agent.agent === normalized);
     return hasAgent ? normalized : selectedAgentParam;
   }, [displayAgents, selectedAgentParam]);
+
+  useEffect(() => {
+    if (selectedAgentParam.trim()) return;
+    if (displayAgents.length === 0) return;
+    setSearchParams(`agent=${encodeURIComponent(displayAgents[0].agent)}`, {
+      replace: true,
+    });
+  }, [displayAgents, selectedAgentParam, setSearchParams]);
 
   function handleSelectAgent(agentName) {
     setSearchParams(`agent=${encodeURIComponent(agentName)}`);
